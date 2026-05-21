@@ -1,0 +1,2873 @@
+app:
+  description: 从企业版 Dify 同步的 Windows 巡检问答 Chatflow
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  icon_type: emoji
+  mode: advanced-chat
+  name: Windows巡检问答test1
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/minimax:0.0.17@71c4f6828644f499978d8978792c6288730bde7012354906b95008e5e0995113
+    version: null
+kind: app
+version: 0.6.0
+workflow:
+  conversation_variables: []
+  environment_variables:
+  - description: Windows 巡检命令库；后续新增命令直接修改这个环境变量。
+    id: env_command_library_json
+    name: COMMAND_LIBRARY_JSON
+    selector:
+    - env
+    - COMMAND_LIBRARY_JSON
+    value: "{\n  \"version\": \"2026-05-19\",\n  \"source\": \"Microsoft AD.docx\"\
+      ,\n  \"notes\": \"将本 JSON 作为 Dify 页面中的环境变量 COMMAND_LIBRARY_JSON 的值。已移除 Export-Csv\
+      \ 导出逻辑，确保 Agent 能从 stdout 捕获数据返回给大语言模型。\",\n  \"commands\": [\n    {\n     \
+      \ \"id\": \"host_domain_role_probe\",\n      \"source\": \"library\",\n    \
+      \  \"category\": \"active_directory\",\n      \"title\": \"主机域角色探测\",\n    \
+      \  \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy\
+      \ Bypass -Command \\\"$cs = Get-CimInstance Win32_ComputerSystem; [pscustomobject]@{\
+      \ ComputerName = $cs.Name; Domain = $cs.Domain; PartOfDomain = $cs.PartOfDomain;\
+      \ DomainRole = $cs.DomainRole; DomainRoleText = switch ($cs.DomainRole) { 0\
+      \ {'StandaloneWorkstation'} 1 {'MemberWorkstation'} 2 {'StandaloneServer'} 3\
+      \ {'MemberServer'} 4 {'BackupDomainController'} 5 {'PrimaryDomainController'}\
+      \ default {'Unknown'} } } | Format-List\\\"\",\n      \"purpose\": \"判断当前机器是否已加入域、是否为域控制器\"\
+      ,\n      \"output_hint\": \"ComputerName, Domain, PartOfDomain, DomainRole,\
+      \ DomainRoleText\"\n    },\n    {\n      \"id\": \"host_os_probe\",\n      \"\
+      source\": \"library\",\n      \"category\": \"server_general\",\n      \"title\"\
+      : \"操作系统信息探测\",\n      \"risk_level\": \"low\",\n      \"shell\": \"powershell\
+      \ -NoProfile -ExecutionPolicy Bypass -Command \\\"$os = Get-CimInstance Win32_OperatingSystem;\
+      \ [pscustomobject]@{ ComputerName = $os.CSName; Caption = $os.Caption; Version\
+      \ = $os.Version; BuildNumber = $os.BuildNumber; OSArchitecture = $os.OSArchitecture\
+      \ } | Format-List\\\"\",\n      \"purpose\": \"获取当前主机操作系统名称、版本、架构\",\n     \
+      \ \"output_hint\": \"ComputerName, Caption, Version, BuildNumber, OSArchitecture\"\
+      \n    },\n    {\n      \"id\": \"host_identity_probe\",\n      \"source\": \"\
+      library\",\n      \"category\": \"server_general\",\n      \"title\": \"当前账户与管理员权限探测\"\
+      ,\n      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile\
+      \ -ExecutionPolicy Bypass -Command \\\"$id = [System.Security.Principal.WindowsIdentity]::GetCurrent();\
+      \ $principal = New-Object System.Security.Principal.WindowsPrincipal($id); [pscustomobject]@{\
+      \ UserName = $id.Name; IsAdministrator = $principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)\
+      \ } | Format-List\\\"\",\n      \"purpose\": \"获取当前执行账户以及是否管理员\",\n      \"\
+      output_hint\": \"UserName, IsAdministrator\"\n    },\n    {\n      \"id\": \"\
+      host_time_probe\",\n      \"source\": \"library\",\n      \"category\": \"server_general\"\
+      ,\n      \"title\": \"当前时间与时区探测\",\n      \"risk_level\": \"low\",\n      \"\
+      shell\": \"powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"[pscustomobject]@{\
+      \ CurrentTime = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss K'); TimeZone = (Get-TimeZone).Id\
+      \ } | Format-List\\\"\",\n      \"purpose\": \"获取当前主机时间和时区\",\n      \"output_hint\"\
+      : \"CurrentTime, TimeZone\"\n    },\n    {\n      \"id\": \"host_domain_role_probe\"\
+      ,\n      \"category\": \"active_directory\",\n      \"title\": \"主机域角色探测\",\n\
+      \      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy\
+      \ Bypass -Command \\\"$cs = Get-CimInstance Win32_ComputerSystem; [pscustomobject]@{\
+      \ ComputerName = $cs.Name; Domain = $cs.Domain; PartOfDomain = $cs.PartOfDomain;\
+      \ DomainRole = $cs.DomainRole; DomainRoleText = switch ($cs.DomainRole) { 0\
+      \ {'StandaloneWorkstation'} 1 {'MemberWorkstation'} 2 {'StandaloneServer'} 3\
+      \ {'MemberServer'} 4 {'BackupDomainController'} 5 {'PrimaryDomainController'}\
+      \ default {'Unknown'} } } | Format-List\\\"\",\n      \"purpose\": \"判断当前机器是否已加入域、是否为域控制器\"\
+      ,\n      \"output_hint\": \"ComputerName, Domain, PartOfDomain, DomainRole,\
+      \ DomainRoleText\"\n    },\n    {\n      \"id\": \"ad_tooling_probe\",\n   \
+      \   \"category\": \"active_directory\",\n      \"title\": \"AD 工具可用性探测\",\n\
+      \      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy\
+      \ Bypass -Command \\\"$ad = Get-Module -ListAvailable ActiveDirectory | Select-Object\
+      \ -First 1 Name, Version, Path; $rep = Get-Command repadmin -ErrorAction SilentlyContinue;\
+      \ $dcd = Get-Command dcdiag -ErrorAction SilentlyContinue; [pscustomobject]@{\
+      \ ActiveDirectoryModuleInstalled = [bool]$ad; ActiveDirectoryModulePath = if\
+      \ ($ad) { $ad.Path } else { $null }; RepadminAvailable = [bool]$rep; DcdiagAvailable\
+      \ = [bool]$dcd } | Format-List\\\"\",\n      \"purpose\": \"检查 Active Directory\
+      \ PowerShell 模块、repadmin、dcdiag 是否可用\",\n      \"output_hint\": \"ActiveDirectoryModuleInstalled,\
+      \ ActiveDirectoryModulePath, RepadminAvailable, DcdiagAvailable\"\n    },\n\
+      \    {\n      \"id\": \"ad_ntds_service_probe\",\n      \"category\": \"active_directory\"\
+      ,\n      \"title\": \"NTDS 服务探测\",\n      \"risk_level\": \"low\",\n      \"\
+      shell\": \"powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"$svc =\
+      \ Get-Service -Name NTDS -ErrorAction SilentlyContinue; if ($svc) { $svc | Select-Object\
+      \ Name, Status, StartType, DisplayName } else { Write-Error '未发现 NTDS 服务。当前主机大概率不是域控制器。';\
+      \ exit 3 }\\\"\",\n      \"purpose\": \"判断当前主机是否具备域控核心服务\",\n      \"output_hint\"\
+      : \"Name, Status, StartType, DisplayName\"\n    },\n    {\n      \"id\": \"\
+      ad_domain_controllers\",\n      \"category\": \"active_directory\",\n      \"\
+      title\": \"域控制器基本信息\",\n      \"risk_level\": \"low\",\n      \"shell\": \"\
+      powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"if (Get-Module -ListAvailable\
+      \ ActiveDirectory) { Import-Module ActiveDirectory; Get-ADDomainController -Filter\
+      \ * | Select-Object Name, IPv4Address, OperatingSystem, Site, IsGlobalCatalog,\
+      \ IsReadOnly } else { Write-Error 'AD 模块不可用。' }\\\"\",\n      \"purpose\": \"\
+      列出所有域控制器及其状态\",\n      \"output_hint\": \"Name, IPv4Address, OperatingSystem,\
+      \ Site, IsGlobalCatalog, IsReadOnly\"\n    },\n    {\n      \"id\": \"ad_domain_info\"\
+      ,\n      \"category\": \"active_directory\",\n      \"title\": \"AD 域信息\",\n\
+      \      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy\
+      \ Bypass -Command \\\"if (Get-Module -ListAvailable ActiveDirectory) { Import-Module\
+      \ ActiveDirectory; Get-ADDomain | Select-Object DNSRoot, DomainMode, PDCEmulator,\
+      \ RIDMaster, InfrastructureMaster } else { Write-Error 'AD 模块不可用。' }\\\"\",\n\
+      \      \"purpose\": \"获取域模式和核心角色信息\",\n      \"output_hint\": \"DNSRoot, DomainMode,\
+      \ PDCEmulator, RIDMaster, InfrastructureMaster\"\n    },\n    {\n      \"id\"\
+      : \"ad_forest_info\",\n      \"category\": \"active_directory\",\n      \"title\"\
+      : \"AD 林信息\",\n      \"risk_level\": \"low\",\n      \"shell\": \"powershell\
+      \ -NoProfile -ExecutionPolicy Bypass -Command \\\"if (Get-Module -ListAvailable\
+      \ ActiveDirectory) { Import-Module ActiveDirectory; Get-ADForest | Select-Object\
+      \ ForestMode, RootDomain, SchemaMaster, DomainNamingMaster, GlobalCatalogs }\
+      \ else { Write-Error 'AD 模块不可用。' }\\\"\",\n      \"purpose\": \"获取林模式和全局编录信息\"\
+      ,\n      \"output_hint\": \"ForestMode, RootDomain, SchemaMaster, DomainNamingMaster,\
+      \ GlobalCatalogs\"\n    },\n    {\n      \"id\": \"ad_fsmo_roles\",\n      \"\
+      category\": \"active_directory\",\n      \"title\": \"FSMO 角色检查\",\n      \"\
+      risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy\
+      \ Bypass -Command \\\"if (Get-Module -ListAvailable ActiveDirectory) { Import-Module\
+      \ ActiveDirectory; $f=(Get-ADForest); $d=(Get-ADDomain); [PSCustomObject]@{SchemaMaster=$f.SchemaMaster;\
+      \ DomainNamingMaster=$f.DomainNamingMaster; PDCEmulator=$d.PDCEmulator; RIDMaster=$d.RIDMaster;\
+      \ InfrastructureMaster=$d.InfrastructureMaster} | Format-List }\\\"\",\n   \
+      \   \"purpose\": \"获取所有 FSMO 角色持有者\",\n      \"output_hint\": \"SchemaMaster,\
+      \ DomainNamingMaster, PDCEmulator, RIDMaster, InfrastructureMaster\"\n    },\n\
+      \    {\n      \"id\": \"ad_repadmin_summary\",\n      \"category\": \"active_directory\"\
+      ,\n      \"title\": \"AD 复制摘要\",\n      \"risk_level\": \"low\",\n      \"shell\"\
+      : \"powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"if (Get-Command\
+      \ repadmin -ErrorAction SilentlyContinue) { & repadmin /replsummary } else {\
+      \ Write-Error 'repadmin 不可用。' }\\\"\",\n      \"purpose\": \"检查 AD 复制摘要\",\n\
+      \      \"output_hint\": \"复制延迟、失败数量、目标 DC\"\n    },\n    {\n      \"id\": \"\
+      ad_repadmin_status\",\n      \"category\": \"active_directory\",\n      \"title\"\
+      : \"AD 复制状态详情\",\n      \"risk_level\": \"low\",\n      \"shell\": \"powershell\
+      \ -NoProfile -ExecutionPolicy Bypass -Command \\\"if (Get-Command repadmin -ErrorAction\
+      \ SilentlyContinue) { & repadmin /showrepl * /csv } else { Write-Error 'repadmin\
+      \ 不可用。' }\\\"\",\n      \"purpose\": \"检查 AD 复制状态详情\",\n      \"output_hint\"\
+      : \"以 CSV 格式输出的复制状态数据\"\n    },\n    {\n      \"id\": \"ad_dcdiag_full\",\n\
+      \      \"category\": \"active_directory\",\n      \"title\": \"DCDiag 全量检查\"\
+      ,\n      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile\
+      \ -ExecutionPolicy Bypass -Command \\\"if (Get-Command dcdiag -ErrorAction SilentlyContinue)\
+      \ { & dcdiag /v /c /e } else { Write-Error 'dcdiag 不可用。' }\\\"\",\n      \"\
+      purpose\": \"对所有域控运行完整诊断\",\n      \"output_hint\": \"各项测试结果与错误信息\"\n    },\n\
+      \    {\n      \"id\": \"ad_dcdiag_dns\",\n      \"category\": \"active_directory\"\
+      ,\n      \"title\": \"DCDiag DNS专项检查\",\n      \"risk_level\": \"low\",\n  \
+      \    \"shell\": \"powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"\
+      if (Get-Command dcdiag -ErrorAction SilentlyContinue) { & dcdiag /test:dns /e\
+      \ /v } else { Write-Error 'dcdiag 不可用。' }\\\"\",\n      \"purpose\": \"对所有域控运行DNS诊断\"\
+      ,\n      \"output_hint\": \"DNS 测试结果\"\n    },\n    {\n      \"id\": \"ad_disabled_users\"\
+      ,\n      \"category\": \"active_directory\",\n      \"title\": \"禁用用户账户\",\n\
+      \      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy\
+      \ Bypass -Command \\\"if (Get-Module -ListAvailable ActiveDirectory) { Import-Module\
+      \ ActiveDirectory; Get-ADUser -Filter {Enabled -eq $false} -Properties LastLogonDate,\
+      \ WhenCreated | Select-Object Name, SamAccountName, LastLogonDate, WhenCreated\
+      \ }\\\"\",\n      \"purpose\": \"统计禁用的用户账户\",\n      \"output_hint\": \"Name,\
+      \ SamAccountName, LastLogonDate, WhenCreated\"\n    },\n    {\n      \"id\"\
+      : \"ad_inactive_users_90days\",\n      \"category\": \"active_directory\",\n\
+      \      \"title\": \"90天未登录活跃用户\",\n      \"risk_level\": \"low\",\n      \"\
+      shell\": \"powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"if (Get-Module\
+      \ -ListAvailable ActiveDirectory) { Import-Module ActiveDirectory; $d = (Get-Date).AddDays(-90);\
+      \ Get-ADUser -Filter {LastLogonDate -lt $d -and Enabled -eq $true} -Properties\
+      \ LastLogonDate | Select-Object Name, SamAccountName, LastLogonDate }\\\"\"\
+      ,\n      \"purpose\": \"统计 90 天未登录的活跃用户\",\n      \"output_hint\": \"Name, SamAccountName,\
+      \ LastLogonDate\"\n    },\n    {\n      \"id\": \"ad_password_never_expires\"\
+      ,\n      \"category\": \"active_directory\",\n      \"title\": \"密码永不过期用户\"\
+      ,\n      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile\
+      \ -ExecutionPolicy Bypass -Command \\\"if (Get-Module -ListAvailable ActiveDirectory)\
+      \ { Import-Module ActiveDirectory; Get-ADUser -Filter {PasswordNeverExpires\
+      \ -eq $true -and Enabled -eq $true} | Select-Object Name, SamAccountName }\\\
+      \"\",\n      \"purpose\": \"统计密码设置为永不过期的用户\",\n      \"output_hint\": \"Name,\
+      \ SamAccountName\"\n    },\n    {\n      \"id\": \"ad_locked_out_users\",\n\
+      \      \"category\": \"active_directory\",\n      \"title\": \"锁定用户检查\",\n \
+      \     \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy\
+      \ Bypass -Command \\\"if (Get-Module -ListAvailable ActiveDirectory) { Import-Module\
+      \ ActiveDirectory; Search-ADAccount -LockedOut | Select-Object Name, SamAccountName,\
+      \ LastLogonDate }\\\"\",\n      \"purpose\": \"检查当前被锁定的 AD 用户\",\n      \"output_hint\"\
+      : \"Name, SamAccountName, LastLogonDate\"\n    },\n    {\n      \"id\": \"ad_gpo_list\"\
+      ,\n      \"category\": \"active_directory\",\n      \"title\": \"组策略(GPO)列表\"\
+      ,\n      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile\
+      \ -ExecutionPolicy Bypass -Command \\\"if (Get-Command Get-GPO -ErrorAction\
+      \ SilentlyContinue) { Get-GPO -All | Select-Object DisplayName, GpoStatus, CreationTime,\
+      \ ModificationTime } else { Write-Error 'GroupPolicy 模块不可用。' }\\\"\",\n    \
+      \  \"purpose\": \"检查所有的 GPO 列表\",\n      \"output_hint\": \"DisplayName, GpoStatus,\
+      \ CreationTime, ModificationTime\"\n    },\n    {\n      \"id\": \"ad_dns_zones\"\
+      ,\n      \"category\": \"active_directory\",\n      \"title\": \"DNS 区域列表\"\
+      ,\n      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile\
+      \ -ExecutionPolicy Bypass -Command \\\"if (Get-Command Get-DnsServerZone -ErrorAction\
+      \ SilentlyContinue) { Get-DnsServerZone | Select-Object ZoneName, ZoneType,\
+      \ DynamicUpdate, IsReverseLookupZone, IsDsIntegrated } else { Write-Error 'DnsServer\
+      \ 模块不可用。' }\\\"\",\n      \"purpose\": \"检查 DNS 区域配置\",\n      \"output_hint\"\
+      : \"ZoneName, ZoneType, DynamicUpdate, IsReverseLookupZone, IsDsIntegrated\"\
+      \n    },\n    {\n      \"id\": \"exchange_server_list\",\n      \"category\"\
+      : \"exchange\",\n      \"title\": \"Exchange 服务器清单\",\n      \"risk_level\"\
+      : \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy Bypass\
+      \ -Command \\\"if (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)\
+      \ { Get-ExchangeServer | Select-Object Name, ServerRole, Edition, AdminDisplayVersion,\
+      \ Site } else { Write-Error 'Exchange 管理工具未加载或不可用。' }\\\"\",\n      \"purpose\"\
+      : \"列出 Exchange 服务器基础信息\",\n      \"output_hint\": \"Name, ServerRole, Edition,\
+      \ AdminDisplayVersion, Site\"\n    },\n    {\n      \"id\": \"exchange_health_report\"\
+      ,\n      \"category\": \"exchange\",\n      \"title\": \"Exchange 健康报告\",\n\
+      \      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy\
+      \ Bypass -Command \\\"if (Get-Command Get-HealthReport -ErrorAction SilentlyContinue)\
+      \ { Get-HealthReport -Server (Get-ExchangeServer).Name } else { Write-Error\
+      \ 'Exchange 管理工具未加载。' }\\\"\",\n      \"purpose\": \"获取 Exchange 健康报告\",\n \
+      \     \"output_hint\": \"健康状态、失败项、组件名称\"\n    },\n    {\n      \"id\": \"exchange_component_state\"\
+      ,\n      \"category\": \"exchange\",\n      \"title\": \"Exchange 组件状态\",\n\
+      \      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy\
+      \ Bypass -Command \\\"if (Get-Command Get-ServerComponentState -ErrorAction\
+      \ SilentlyContinue) { Get-ExchangeServer | ForEach-Object { Get-ServerComponentState\
+      \ -Identity $_.Name | Select-Object @{N='Server';E={$_.Identity}}, Component,\
+      \ State } }\\\"\",\n      \"purpose\": \"检查 Exchange 服务器组件状态\",\n      \"output_hint\"\
+      : \"Server, Component, State\"\n    },\n    {\n      \"id\": \"exchange_database_status\"\
+      ,\n      \"category\": \"exchange\",\n      \"title\": \"邮箱数据库状态\",\n      \"\
+      risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy\
+      \ Bypass -Command \\\"if (Get-Command Get-MailboxDatabase -ErrorAction SilentlyContinue)\
+      \ { Get-MailboxDatabase -Status | Select-Object Name, Server, DatabaseSize,\
+      \ Mounted, LastFullBackup }\\\"\",\n      \"purpose\": \"检查邮箱数据库挂载和备份状态\",\n\
+      \      \"output_hint\": \"Name, Server, DatabaseSize, Mounted, LastFullBackup\"\
+      \n    },\n    {\n      \"id\": \"exchange_dag_status\",\n      \"category\"\
+      : \"exchange\",\n      \"title\": \"DAG 状态检查\",\n      \"risk_level\": \"low\"\
+      ,\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy Bypass -Command\
+      \ \\\"if (Get-Command Get-DatabaseAvailabilityGroup -ErrorAction SilentlyContinue)\
+      \ { Get-DatabaseAvailabilityGroup -Status | Select-Object Name, PrimaryActiveManager,\
+      \ OperationalServers, WitnessServer }\\\"\",\n      \"purpose\": \"检查数据库可用性组(DAG)配置\"\
+      ,\n      \"output_hint\": \"Name, PrimaryActiveManager, OperationalServers,\
+      \ WitnessServer\"\n    },\n    {\n      \"id\": \"exchange_mail_queues\",\n\
+      \      \"category\": \"exchange\",\n      \"title\": \"邮件队列检查\",\n      \"risk_level\"\
+      : \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy Bypass\
+      \ -Command \\\"if (Get-Command Get-Queue -ErrorAction SilentlyContinue) { Get-ExchangeServer\
+      \ | Where-Object { $_.ServerRole -match 'Mailbox' } | ForEach-Object { Get-Queue\
+      \ -Server $_.Name | Select-Object Identity, DeliveryType, Status, MessageCount\
+      \ } }\\\"\",\n      \"purpose\": \"检查 Exchange 邮箱服务器邮件队列\",\n      \"output_hint\"\
+      : \"Identity, DeliveryType, Status, MessageCount\"\n    },\n    {\n      \"\
+      id\": \"exchange_certificates\",\n      \"category\": \"exchange\",\n      \"\
+      title\": \"Exchange 证书状态\",\n      \"risk_level\": \"low\",\n      \"shell\"\
+      : \"powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"if (Get-Command\
+      \ Get-ExchangeCertificate -ErrorAction SilentlyContinue) { Get-ExchangeServer\
+      \ | ForEach-Object { Get-ExchangeCertificate -Server $_.Name | Select-Object\
+      \ Subject, Thumbprint, NotAfter, Status, Services } }\\\"\",\n      \"purpose\"\
+      : \"检查所有 Exchange 证书的过期时间和绑定的服务\",\n      \"output_hint\": \"Subject, Thumbprint,\
+      \ NotAfter, Status, Services\"\n    },\n    {\n      \"id\": \"srv_disk_space\"\
+      ,\n      \"category\": \"server_general\",\n      \"title\": \"服务器磁盘空间检查\",\n\
+      \      \"risk_level\": \"low\",\n      \"shell\": \"powershell -NoProfile -ExecutionPolicy\
+      \ Bypass -Command \\\"Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3'\
+      \ | Select-Object DeviceID, @{N='Size_GB';E={[math]::Round($_.Size/1GB,2)}},\
+      \ @{N='FreeSpace_GB';E={[math]::Round($_.FreeSpace/1GB,2)}}, @{N='PercentFree';E={[math]::Round($_.FreeSpace/$_.Size*100,2)}}\
+      \ | Format-Table -AutoSize\\\"\",\n      \"purpose\": \"检查当前主机的磁盘空间使用率\",\n\
+      \      \"output_hint\": \"DeviceID, Size_GB, FreeSpace_GB, PercentFree\"\n \
+      \   },\n    {\n      \"id\": \"srv_uptime\",\n      \"category\": \"server_general\"\
+      ,\n      \"title\": \"服务器运行时间\",\n      \"risk_level\": \"low\",\n      \"shell\"\
+      : \"powershell -NoProfile -ExecutionPolicy Bypass -Command \\\"$os = Get-CimInstance\
+      \ Win32_OperatingSystem; [PSCustomObject]@{ Server = $env:COMPUTERNAME; LastBootTime\
+      \ = $os.LastBootUpTime; Uptime_Days = [math]::Round(((Get-Date) - $os.LastBootUpTime).TotalDays,\
+      \ 2) } | Format-List\\\"\",\n      \"purpose\": \"检查主机的系统运行时间和最近重启时间\",\n  \
+      \    \"output_hint\": \"Server, LastBootTime, Uptime_Days\"\n    }\n  ]\n}"
+    value_type: string
+  - description: 高风险关键词；命中后进入阻断分支。
+    id: env_risk_keywords
+    name: RISK_KEYWORDS
+    selector:
+    - env
+    - RISK_KEYWORDS
+    value: remove|delete|stop|restart|disable|set-|new-|add-|clear|format|shutdown|reboot|rm|del
+    value_type: string
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        attachment_image_file_size_limit: 2
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        file_upload_limit: 20
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: 请输入 Windows 巡检问题。低风险只读巡检会直接执行；高风险或边界请求会进入人工介入审批。
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - 全量检查
+    - 今天周几
+    - 服务器状态如何
+    - ''
+    suggested_questions_after_answer:
+      enabled: true
+      model:
+        completion_params:
+          echo: false
+          frequency_penalty: 0
+          max_tokens: 0
+          presence_penalty: 0
+          stop: []
+          temperature: 0.7
+          top_p: 0
+        mode: chat
+        name: minimax-m2.7
+        provider: langgenius/minimax/minimax
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        sourceType: start
+        targetType: code
+      id: 1779088244107-source-build_agent_base_url-target
+      selected: false
+      source: '1779088244107'
+      sourceHandle: source
+      target: build_agent_base_url
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        isInLoop: false
+        iteration_id: null
+        loop_id: null
+        sourceType: question-classifier
+        targetType: agent
+      id: 1779158962357-1-1779159173132-target
+      selected: false
+      source: '1779158962357'
+      sourceHandle: '1'
+      target: '1779159173132'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: null
+        isInLoop: false
+        iteration_id: null
+        loop_id: null
+        sourceType: question-classifier
+        targetType: agent
+      id: 1779158962357-2-planner_agent-target
+      selected: false
+      source: '1779158962357'
+      sourceHandle: '2'
+      target: planner_agent
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: null
+        isInLoop: false
+        iteration_id: null
+        loop_id: null
+        sourceType: agent
+        targetType: agent
+      id: 1779159173132-source-17791592036430-target
+      selected: false
+      source: '1779159173132'
+      sourceHandle: source
+      target: '17791592036430'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: null
+        isInLoop: false
+        iteration_id: null
+        loop_id: null
+        sourceType: agent
+        targetType: code
+      id: 17791592036430-source-normalize_review_gate-target
+      selected: false
+      source: '17791592036430'
+      sourceHandle: source
+      target: normalize_review_gate
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: answer
+      id: 1779172289855-source-answer_execute-target
+      selected: false
+      source: '1779172289855'
+      sourceHandle: source
+      target: answer_execute
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        sourceType: code
+        targetType: http-request
+      id: build_agent_base_url-source-health_check_http-target
+      selected: false
+      source: build_agent_base_url
+      sourceHandle: source
+      target: health_check_http
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: agent
+        targetType: answer
+      id: direct_answer_agent-source-answer_direct-target
+      selected: false
+      source: direct_answer_agent
+      sourceHandle: source
+      target: answer_direct
+      targetHandle: target
+      type: custom
+    - data:
+        isInLoop: false
+        sourceType: http-request
+        targetType: answer
+      id: execute_http-fail-branch-answer_execute_error-target
+      selected: false
+      source: execute_http
+      sourceHandle: fail-branch
+      target: answer_execute_error
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        sourceType: http-request
+        targetType: agent
+      id: execute_http-source-result_agent-target
+      selected: false
+      source: execute_http
+      sourceHandle: source
+      target: result_agent
+      targetHandle: target
+      type: custom
+    - data:
+        isInLoop: false
+        sourceType: http-request
+        targetType: answer
+      id: health_check_http-fail-branch-answer_health_failed-target
+      selected: false
+      source: health_check_http
+      sourceHandle: fail-branch
+      target: answer_health_failed
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: answer
+      id: health_check_http-source-1779174414464-target
+      source: health_check_http
+      sourceHandle: source
+      target: '1779174414464'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        sourceType: http-request
+        targetType: question-classifier
+      id: health_check_http-source-route_classifier-target
+      selected: false
+      source: health_check_http
+      sourceHandle: source
+      target: route_classifier
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: human-input
+        targetType: answer
+      id: human_review-__timeout-1779159677837-target
+      selected: false
+      source: human_review
+      sourceHandle: __timeout
+      target: '1779159677837'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        sourceType: human-input
+        targetType: code
+      id: human_review-approve_exec-normalize_request-target
+      selected: false
+      source: human_review
+      sourceHandle: approve_exec
+      target: normalize_request
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: human-input
+        targetType: answer
+      id: human_review-reject_block-answer_reject-target
+      selected: false
+      source: human_review
+      sourceHandle: reject_block
+      target: answer_reject
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: human-input
+        targetType: answer
+      id: human_review-timeout-answer_reject-target
+      selected: false
+      source: human_review
+      sourceHandle: timeout
+      target: answer_reject
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: answer
+      id: normalize_request-fail-branch-answer_request_payload_error-target
+      selected: false
+      source: normalize_request
+      sourceHandle: fail-branch
+      target: answer_request_payload_error
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: http-request
+      id: normalize_request-source-execute_http-target
+      selected: false
+      source: normalize_request
+      sourceHandle: source
+      target: execute_http
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: answer
+      id: normalize_review_gate-fail-branch-1779171207454-target
+      selected: false
+      source: normalize_review_gate
+      sourceHandle: fail-branch
+      target: '1779171207454'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        sourceType: code
+        targetType: if-else
+      id: normalize_review_gate-source-review_gate_if-target
+      selected: false
+      source: normalize_review_gate
+      sourceHandle: source
+      target: review_gate_if
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: agent
+        targetType: agent
+      id: planner_agent-source-review_agent-target
+      selected: false
+      source: planner_agent
+      sourceHandle: source
+      target: review_agent
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: answer
+      id: result_agent-fail-branch-answer_result_format_error-target
+      selected: false
+      source: result_agent
+      sourceHandle: fail-branch
+      target: answer_result_format_error
+      targetHandle: target
+      type: custom
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: llm
+      id: result_agent-source-1779172289855-target
+      selected: false
+      source: result_agent
+      sourceHandle: source
+      target: '1779172289855'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        sourceType: agent
+        targetType: code
+      id: review_agent-source-normalize_review_gate-target
+      selected: false
+      source: review_agent
+      sourceHandle: source
+      target: normalize_review_gate
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: code
+      id: review_gate_if-false-normalize_request-target
+      selected: false
+      source: review_gate_if
+      sourceHandle: 'false'
+      target: normalize_request
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: human-input
+      id: review_gate_if-need_human_review-human_review-target
+      selected: false
+      source: review_gate_if
+      sourceHandle: need_human_review
+      target: human_review
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: question-classifier
+        targetType: agent
+      id: route_classifier-direct_answer-direct_answer_agent-target
+      selected: false
+      source: route_classifier
+      sourceHandle: direct_answer
+      target: direct_answer_agent
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        isInLoop: false
+        iteration_id: null
+        loop_id: null
+        sourceType: question-classifier
+        targetType: question-classifier
+      id: route_classifier-execute-1779158962357-target
+      selected: false
+      source: route_classifier
+      sourceHandle: execute
+      target: '1779158962357'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - default: 10.0.18.212
+          label: Win Agent IP
+          max_length: 64
+          required: true
+          type: text-input
+          variable: machine_ip
+        - default: '8765'
+          label: Win Agent 端口
+          max_length: 10
+          required: true
+          type: text-input
+          variable: win_agent_port
+      height: 135
+      id: '1779088244107'
+      position:
+        x: -37.517844343736556
+        y: -90.94120610229555
+      positionAbsolute:
+        x: -37.517844343736556
+        y: -90.94120610229555
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        classes:
+        - id: '1'
+          name: '全量检查 / 全量检查 + 重点项
+
+            用户明确要求对目标主机做全面巡检、完整检查、全量跑一遍，或虽然点名了重点项，但仍然明确要求“先全量、再重点看某项”，都归到分类1。
+
+            例如：全量检查、完整巡检、全部跑一遍、先做全量检查再重点看 AD、全量检查顺便关注 SQL。
+
+            '
+        - id: '2'
+          name: '定向检查 / 局部问题排查
+
+            用户只要求检查某个组件、某类报错、某项服务、某个故障现象、某段日志、某类配置，或只想看部分内容，都归到分类2。
+
+            例如：检查 AD 复制状态、看 Exchange 服务、分析某个报错、查看域信息、排查某项异常、检查某个服务是否正常。
+
+            '
+        instructions: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}
+
+
+            {{#sys.files#}}'
+          window:
+            enabled: true
+            size: 100
+        model:
+          completion_params:
+            temperature: 0.1
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        query_variable_selector:
+        - '1779088244107'
+        - sys.query
+        selected: false
+        title: 指令分析路由
+        type: question-classifier
+        vision:
+          enabled: false
+      height: 170
+      id: '1779158962357'
+      position:
+        x: 248.12068459036465
+        y: 258.66965235111616
+      positionAbsolute:
+        x: 248.12068459036465
+        y: 258.66965235111616
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        agent_parameters:
+          instruction:
+            type: constant
+            value: '你是 Windows 全量巡检命令规划器。当前分支已经被判定为全量检查。你的任务是输出一份可发送给 Win Agent 的候选
+              JSON 请求体。
+
+
+
+              1. 全量检查的含义是：必须把 COMMAND_LIBRARY_JSON.commands 中的全部命令按原始顺序完整执行一遍，一条都不能缺，顺序也不能颠倒，不能按主题筛选，不能因为你判断机器上可能没有某个组件就跳过。
+
+              2. 对于命令库中的每一条命令，commands 中都必须输出一个对象，且 id 必须与命令库一致，shell 必须与命令库原文完全一致，source
+              必须固定为 library。
+
+              3. 如果用户在全量检查的同时额外要求查看某个命令库中没有的细项，例如 SQL 服务信息、某个自定义组件状态，你可以在完整命令库序列之后再追加自生成命令。所有追加命令必须排在全部
+              library 命令之后，不能插入中间，source 必须为 generated。
+
+              4. 如果用户没有额外要求，commands 就只包含完整命令库序列，不要额外生成任何命令。
+
+              5. 不要试图根据机器是否有 AD、Exchange、DNS、数据库等条件提前删减命令。全量检查的目的就是先跑完整基线，再根据结果做后续判断。
+
+              6. 自生成命令必须完整、可直接执行、不要包含占位符、不要输出伪代码、不要附带解释文字。
+
+              7. target_host 固定使用开始节点 machine_ip；task_id 固定为 wf-{{#sys.workflow_run_id#}}。
+
+              8. 只输出 JSON 对象，不要 Markdown，不要解释，不要多余文本。
+
+              9. 建议输出字段至少包含 task_id、target_host、plan_mode、purpose、commands，可按需补充 planning_note、risk_level、extra_user_requirements。
+
+              10. plan_mode 固定写 full_inspection。'
+          maximum_iterations:
+            type: constant
+            value: 94
+          model:
+            type: constant
+            value:
+              completion_params:
+                max_tokens: 6000
+                temperature: 0.1
+              mode: chat
+              model: minimax-m2.7
+              model_type: llm
+              provider: langgenius/minimax/minimax
+          query:
+            type: constant
+            value: '当前分支：全量检查
+
+
+              用户问题：{{#sys.query#}}
+
+
+              开始节点 machine_ip：{{#1779088244107.machine_ip#}}
+
+              开始节点 win_agent_port：{{#1779088244107.win_agent_port#}}
+
+
+              命令库 JSON（必须将其中全部 commands 按原始顺序完整输出；若用户有额外要求且命令库中没有对应命令，可在完整命令库序列之后追加
+              generated 命令）：{{#env.COMMAND_LIBRARY_JSON#}}
+
+
+              请输出候选执行计划 JSON。target_host 固定使用开始节点 machine_ip，task_id 固定使用 wf-{{#sys.workflow_run_id#}}。'
+          tools:
+            type: constant
+            value:
+            - enabled: true
+              extra:
+                description: 一个用于获取当前时间的工具。
+              parameters: {}
+              provider_name: time
+              provider_show_name: time
+              schemas:
+              - default: '%Y-%m-%d %H:%M:%S'
+                form: form
+                label: Format
+                name: format
+                options: []
+                required: false
+                type: string
+              - default: UTC
+                form: form
+                label: Timezone
+                name: timezone
+                options:
+                - label: UTC
+                  value: UTC
+                required: false
+                type: select
+              settings:
+                format:
+                  value:
+                    type: constant
+                    value: '%Y-%m-%d %H:%M:%S'
+                timezone:
+                  value:
+                    type: constant
+                    value: UTC
+              tool_description: 一个用于获取当前时间的工具。
+              tool_label: 获取当前时间
+              tool_name: current_time
+              type: builtin
+        agent_strategy_label: ReAct
+        agent_strategy_name: ReAct
+        agent_strategy_provider_name: langgenius/agent/agent
+        desc: ''
+        isInIteration: null
+        isInLoop: null
+        iteration_id: null
+        loop_id: null
+        memory:
+          query_prompt_template: '你是 Windows 全量巡检命令规划器。当前分支已经被判定为全量检查。你的任务是输出一份可发送给
+            Win Agent 的候选 JSON 请求体。
+
+            1. 全量检查的含义是：必须把 COMMAND_LIBRARY_JSON.commands 中的全部命令按原始顺序完整执行一遍，一条都不能缺，顺序也不能颠倒，不能按主题筛选，不能因为你判断机器上可能没有某个组件就跳过。
+
+            2. 对于命令库中的每一条命令，commands 中都必须输出一个对象，且 id 必须与命令库一致，shell 必须与命令库原文完全一致，source
+            必须固定为 library。
+
+            3. 如果用户在全量检查的同时额外要求查看某个命令库中没有的细项，例如 SQL 服务信息、某个自定义组件状态，你可以在完整命令库序列之后再追加自生成命令。所有追加命令必须排在全部
+            library 命令之后，不能插入中间，source 必须为 generated。
+
+            4. 如果用户没有额外要求，commands 就只包含完整命令库序列，不要额外生成任何命令。
+
+            5. 不要试图根据机器是否有 AD、Exchange、DNS、数据库等条件提前删减命令。全量检查的目的就是先跑完整基线，再根据结果做后续判断。
+
+            6. 自生成命令必须完整、可直接执行、不要包含占位符、不要输出伪代码、不要附带解释文字。
+
+            7. target_host 固定使用开始节点 machine_ip；task_id 固定为 wf-{{#sys.workflow_run_id#}}。
+
+            8. 只输出 JSON 对象，不要 Markdown，不要解释，不要多余文本。
+
+            9. 建议输出字段至少包含 task_id、target_host、plan_mode、purpose、commands，可按需补充 planning_note、risk_level、extra_user_requirements。
+
+            10. plan_mode 固定写 full_inspection。'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 100
+        meta:
+          minimum_dify_version: 1.7.0
+          version: 0.0.2
+        output_schema: {}
+        plugin_unique_identifier: langgenius/agent:0.0.37@a5dcc6ea00bca23439b49ff7d65704f3f5dd6ce2ca353205e62278e2148d84b6
+        selected: false
+        title: 巡检命令规划是全量检查
+        tool_node_version: '2'
+        type: agent
+      height: 188
+      id: '1779159173132'
+      position:
+        x: 574.5047214576301
+        y: 225.59208321171883
+      positionAbsolute:
+        x: 574.5047214576301
+        y: 225.59208321171883
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        agent_parameters:
+          instruction:
+            type: constant
+            value: '你是 Windows 全量巡检命令安全复核器。你的任务是结合用户原始意图、COMMAND_LIBRARY_JSON 和全量检查分支的候选命令，判断它们是否可以自动执行。
+
+              1. 先检查 planner 输出是否严格满足全量检查要求：COMMAND_LIBRARY_JSON 中全部命令都已出现一次且只出现一次，顺序与命令库完全一致，所有库内命令的
+              shell 与命令库原文完全一致，source 全部为 library。
+
+              2. 如果任一 library 命令缺失、重复、顺序被打乱、shell 不一致、source 标错，decision 必须是 human_review，并在
+              summary 明确指出“全量基线序列不完整或顺序不正确”。
+
+              3. 如果 planner 在完整 library 序列之后追加了 generated 命令，用于满足用户额外要求，这种情况也必须是 human_review，因为追加命令需要人工确认。
+
+              4. 只有当完整 library 序列严格正确、没有 generated 命令、并且整组命令都属于只读巡检或前置探测时，decision
+              才能是 auto_execute。
+
+              5. 只要用户原始请求本身包含高风险意图，或任一命令会改系统状态，或你无法确认安全性，也必须返回 human_review。
+
+              6. 不要改写 planner 输出，只做审查。
+
+              7. 只输出 JSON，不要 Markdown，不要解释性前后缀。
+
+              8. 输出字段至少包含 decision、risk_level、summary。'
+          maximum_iterations:
+            type: constant
+            value: 117
+          model:
+            type: constant
+            value:
+              completion_params:
+                max_tokens: 1200
+                temperature: 0.1
+              mode: chat
+              model: minimax-m2.7
+              model_type: llm
+              provider: langgenius/minimax/minimax
+          query:
+            type: constant
+            value: '当前分支：全量检查
+
+
+              用户问题：{{#sys.query#}}
+
+
+              planner 候选执行计划：{{#1779159173132.text#}}
+
+
+              命令库 JSON：{{#env.COMMAND_LIBRARY_JSON#}}
+
+
+              请输出审查 JSON。decision 只能是 auto_execute 或 human_review。'
+          tools:
+            type: constant
+            value:
+            - enabled: true
+              extra:
+                description: 一个用于获取当前时间的工具。
+              parameters: {}
+              provider_name: time
+              provider_show_name: time
+              schemas:
+              - default: '%Y-%m-%d %H:%M:%S'
+                form: form
+                label: Format
+                name: format
+                options: []
+                required: false
+                type: string
+              - default: UTC
+                form: form
+                label: Timezone
+                name: timezone
+                options:
+                - label: UTC
+                  value: UTC
+                required: false
+                type: select
+              settings:
+                format:
+                  value:
+                    type: constant
+                    value: '%Y-%m-%d %H:%M:%S'
+                timezone:
+                  value:
+                    type: constant
+                    value: UTC
+              tool_description: 一个用于获取当前时间的工具。
+              tool_label: 获取当前时间
+              tool_name: current_time
+              type: builtin
+        agent_strategy_label: ReAct
+        agent_strategy_name: ReAct
+        agent_strategy_provider_name: langgenius/agent/agent
+        desc: ''
+        isInIteration: false
+        isInLoop: false
+        iteration_id: null
+        loop_id: null
+        memory:
+          query_prompt_template: '你是 Windows 全量巡检命令安全复核器。你的任务是结合用户原始意图、COMMAND_LIBRARY_JSON
+            和全量检查分支的候选命令，判断它们是否可以自动执行。
+
+            1. 先检查 planner 输出是否严格满足全量检查要求：COMMAND_LIBRARY_JSON 中全部命令都已出现一次且只出现一次，顺序与命令库完全一致，所有库内命令的
+            shell 与命令库原文完全一致，source 全部为 library。
+
+            2. 如果任一 library 命令缺失、重复、顺序被打乱、shell 不一致、source 标错，decision 必须是 human_review，并在
+            summary 明确指出“全量基线序列不完整或顺序不正确”。
+
+            3. 如果 planner 在完整 library 序列之后追加了 generated 命令，用于满足用户额外要求，这种情况也必须是 human_review，因为追加命令需要人工确认。
+
+            4. 只有当完整 library 序列严格正确、没有 generated 命令、并且整组命令都属于只读巡检或前置探测时，decision 才能是
+            auto_execute。
+
+            5. 只要用户原始请求本身包含高风险意图，或任一命令会改系统状态，或你无法确认安全性，也必须返回 human_review。
+
+            6. 不要改写 planner 输出，只做审查。
+
+            7. 只输出 JSON，不要 Markdown，不要解释性前后缀。
+
+            8. 输出字段至少包含 decision、risk_level、summary。'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 100
+        meta:
+          minimum_dify_version: 1.7.0
+          version: 0.0.2
+        output_schema: {}
+        plugin_unique_identifier: langgenius/agent:0.0.37@a5dcc6ea00bca23439b49ff7d65704f3f5dd6ce2ca353205e62278e2148d84b6
+        selected: false
+        title: 是全量检查 命令安全复核
+        tool_node_version: '2'
+        type: agent
+      height: 188
+      id: '17791592036430'
+      position:
+        x: 862.4578129666186
+        y: 225.59208321171883
+      positionAbsolute:
+        x: 862.4578129666186
+        y: 225.59208321171883
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '人工审批超时，系统未继续执行候选命令。
+
+
+          用户请求：{{#sys.query#}}
+
+
+          候选执行计划：{{#normalize_review_gate.planner_text#}}
+
+
+          安全复核结论：{{#normalize_review_gate.review_summary#}}
+
+
+          命令来源统计：
+
+          - 总命令数：{{#normalize_review_gate.total_command_count#}}
+
+          - library 命令数：{{#normalize_review_gate.library_command_count#}}
+
+          - generated 命令数：{{#normalize_review_gate.generated_command_count#}}
+
+
+          完整性结论：{{#normalize_review_gate.integrity_summary#}}
+
+
+          说明：请重新发起请求并完成审批，或改写为更明确的低风险巡检请求。'
+        selected: false
+        title: 超时回复
+        type: answer
+        variables: []
+      height: 361
+      id: '1779159677837'
+      position:
+        x: 1889.410227387207
+        y: -670.6165430665642
+      positionAbsolute:
+        x: 1889.410227387207
+        y: -670.6165430665642
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: 规范化审查结果节点报错，请联系管理员。
+        selected: false
+        title: 规范化审查结果节点报错
+        type: answer
+        variables: []
+      height: 116
+      id: '1779171207454'
+      position:
+        x: 1145.1405142353904
+        y: 555.7022735096457
+      positionAbsolute:
+        x: 1145.1405142353904
+        y: 555.7022735096457
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        memory:
+          query_prompt_template: '{{#sys.query#}}
+
+
+            {{#sys.files#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 100
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        prompt_template:
+        - id: 70fba829-b894-4ba2-91a3-a93a9ffbb817
+          role: system
+          text: "你是 Windows 巡检结果整理助手。\n你的任务是根据 Win Agent execute 接口返回的原始 JSON、命令库（command_library_json）、命令规划器输出（planner_text），生成中文巡检结果。\n\
+            \n请严格按照如下结构输出：\n\n一、机器信息摘要  \n- 连接状态：{{连接状态}}  \n- 主机角色：{{主机角色}}  \n-\
+            \ 操作系统：{{操作系统}}  \n- 当前账户：{{当前账户}}  \n- 管理员权限：{{管理员权限}}  \n- 当前时间：{{当前时间}}\
+            \  \n- AD 域：{{AD 域}}  \n如有字段未获取到，直接写“未获取到”。\n\n二、详细巡检结果  \n- 整体状态：{{整体状态}}\
+            \  \n- 统计信息：\n  - 总命令数：{{总数}}\n  - 总成功数：{{成功数}}\n  - 总失败数：{{失败数}}\n  -\
+            \ 标准命令库命令成功/失败数：{{library成功数}}/{{library失败数}}\n  - 自动生成命令成功/失败数：{{generated成功数}}/{{generated失败数}}\n\
+            - 关键结论：  \n  - {{结论1}}  \n  - {{结论2}}  \n- 失败项：  \n  - {{失败项1}}  \n  -\
+            \ {{失败项2}}  \n\n三、下一步建议  \n- {{建议1}}\n- {{建议2}}\n\n四、命令详情  \n请对每条命令输出如下内容（按执行顺序）：\n\
+            \n{{#each commands}}\n---\n命令：{{shell}}\n解释：{{title}}，{{purpose}}\npowershell输出:\
+            \ {{stdout}}\n风险等级: {{risk_level}}\n解决办法&优化建议：{{solution}}\n{{/each}}\n\
+            \n规则：  \n- 只能根据输入内容输出，不允许编造。  \n- 统计信息和命令详情请结合 execute_body、planner_text、command_library_json\
+            \ 三者综合判断。\n- 命令解释、风险等级、建议优先用命令库的 title/purpose/risk_level/solution 字段，其次用\
+            \ planner_text，最后如无可用信息可简要推断。\n- powershell输出只展示 stdout（如超长可截断）。\n- 全程中文，格式清晰，简洁专业。"
+        - id: 6ff38292-3b13-4bc8-a2ca-552a7bf444bc
+          role: user
+          text: '用户请求：{{#sys.query#}}
+
+            目标地址：{{#1779088244107.machine_ip#}}:{{#1779088244107.win_agent_port#}}
+
+            执行接口 HTTP 状态码：{{#execute_http.status_code#}}
+
+
+            Win Agent execute 原始返回：
+
+            {{#execute_http.body#}}
+
+
+            统一命令规划结果：
+
+            {{#normalize_review_gate.planner_text#}}
+
+
+            命令库：
+
+            {{#env.COMMAND_LIBRARY_JSON#}}
+
+
+            预计算统计信息：
+
+            - 总命令数：{{#normalize_review_gate.total_command_count#}}
+
+            - 标准命令库命令数：{{#normalize_review_gate.library_command_count#}}
+
+            - 自动生成命令数：{{#normalize_review_gate.generated_command_count#}}
+
+            - 自动生成命令列表：{{#normalize_review_gate.generated_command_list#}}
+
+            - 来源异常命令：{{#normalize_review_gate.unknown_source_command_list#}}
+
+            - 完整性结论：{{#normalize_review_gate.integrity_summary#}}
+
+
+            请严格按下面格式输出，不要输出 JSON，不要输出原始命令代码全文，不要输出英文状态原值。
+
+
+            一、机器信息摘要
+
+            连接状态：...
+
+            主机角色：...
+
+            操作系统：...
+
+            当前账户：...
+
+            管理员权限：...
+
+            当前时间：...
+
+            AD 域：...
+
+
+            二、详细巡检结果
+
+            执行统计：
+
+            - 总命令数：...
+
+            - 总成功数：...
+
+            - 总失败数：...
+
+            - 标准命令库命令成功数：...
+
+            - 标准命令库命令失败数：...
+
+            - 自动生成命令成功数：...
+
+            - 自动生成命令失败数：...
+
+
+            关键结论：
+
+            - ...
+
+            - ...
+
+
+            失败项：
+
+            - ...
+
+            - ...
+
+
+            三、逐条命令详情
+
+            请按执行顺序输出每条命令的详细信息，格式固定如下：
+
+
+            1. ...
+
+            命令：
+
+            解释：
+
+            PowerShell输出：
+
+            风险等级：
+
+            解决办法与优化建议：
+
+
+            规则：
+
+            - 只能根据输入内容输出，不允许编造
+
+            - 如果某项没有获取到，明确写“未获取到”
+
+            - 如果执行接口 HTTP 状态码不是 2xx，或者 execute 返回无法解析，明确写“连接或执行失败”
+
+            - 优先从 host_domain_role_probe、host_os_probe、host_identity_probe、host_time_probe
+            中提取机器信息
+
+            - 成功与失败以 return_code 是否等于 0 判断
+
+            - “标准命令库命令”对应 source=library
+
+            - “自动生成命令”对应 source=generated
+
+            - 风险等级输出为中文：低 / 中 / 高
+
+            - 逐条命令详情必须优先结合命令库中的 title、purpose、risk_level；若命令库里没有，再根据 execute 返回做保守总结
+
+            - PowerShell输出只保留关键结果；过长时做摘要，不要整段照抄
+
+            - 解决办法与优化建议必须结合该命令执行结果来写：失败项给修复建议，成功项给观察建议
+
+            - 全程中文，格式清晰，简洁专业，让非技术人员也能看懂'
+        selected: false
+        title: 机器信息与巡检结果整理
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1779172289855'
+      position:
+        x: 2238.0743682786774
+        y: -69.94120610229555
+      positionAbsolute:
+        x: 2238.0743682786774
+        y: -69.94120610229555
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '健康检查通过，服务器连接成功{{#health_check_http.body#}}，正在处理预计2分钟，请耐心等待。
+
+          '
+        selected: false
+        title: 健康检查通过回复
+        type: answer
+        variables: []
+      height: 135
+      id: '1779174414464'
+      position:
+        x: 277.45115352564835
+        y: -249.0116364529166
+      positionAbsolute:
+        x: 277.45115352564835
+        y: -249.0116364529166
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#direct_answer_agent.text#}}'
+        selected: false
+        title: 直接答复
+        type: answer
+        variables: []
+      height: 103
+      id: answer_direct
+      position:
+        x: 883.9675717649206
+        y: -26.09556555283804
+      positionAbsolute:
+        x: 883.9675717649206
+        y: -26.09556555283804
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#1779172289855.text#}}'
+        selected: false
+        title: 执行结果
+        type: answer
+        variables: []
+      height: 103
+      id: answer_execute
+      position:
+        x: 2538.73791743326
+        y: -69.94120610229555
+      positionAbsolute:
+        x: 2538.73791743326
+        y: -69.94120610229555
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '调用 Win Agent execute 接口失败，当前目标地址为 http://{{#1779088244107.machine_ip#}}:{{#1779088244107.win_agent_port#}}/api/v1/execute。
+
+
+          这个失败发生在连接或 HTTP 调用阶段，还没有进入命令结果分析。请优先检查：
+
+          1. machine_ip 和 win_agent_port 是否填写正确；
+
+          2. Windows agent 进程是否仍在运行；
+
+          3. 防火墙与端口是否已放行；
+
+          4. 如果 Dify 在 Docker 中，确认 ssrf_proxy 已放行该地址或网段；
+
+          5. 如果 /health 已通过但 execute 仍失败，请重点检查 execute 接口是否超时、进程是否在健康检查后退出，或中途连接是否被重置。'
+        selected: false
+        title: 执行失败
+        type: answer
+        variables: []
+      height: 346
+      id: answer_execute_error
+      position:
+        x: 1957.3834166346678
+        y: 144.02449082106392
+      positionAbsolute:
+        x: 1957.3834166346678
+        y: 144.02449082106392
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '开始前健康检查失败，当前 Win Agent 地址为 http://{{#1779088244107.machine_ip#}}:{{#1779088244107.win_agent_port#}}/health。
+
+
+          这个失败发生在健康检查地址拼接或 /health 调用阶段，系统还没有进入正式路由与命令执行。请优先检查：
+
+          1. machine_ip 和 win_agent_port 是否填写正确；
+
+          2. Windows agent 进程是否正在运行；
+
+          3. Windows 防火墙与端口是否已放行；
+
+          4. 如果 Dify 运行在 Docker 中，且目标是内网地址，请确认 ssrf_proxy 已放行该地址或网段。'
+        selected: false
+        title: 健康检查失败
+        type: answer
+        variables: []
+      height: 298
+      id: answer_health_failed
+      position:
+        x: -37.517844343736556
+        y: 453.24646616782843
+      positionAbsolute:
+        x: -37.517844343736556
+        y: 453.24646616782843
+      selected: false
+      sourcePosition: null
+      targetPosition: null
+      type: custom
+      width: 242
+    - data:
+        answer: '候选命令未获人工批准执行。
+
+
+          用户请求：{{#sys.query#}}
+
+
+          候选执行计划：{{#normalize_review_gate.planner_text#}}
+
+
+          安全复核结论：{{#normalize_review_gate.review_summary#}}
+
+
+          命令来源统计：
+
+          - 总命令数：{{#normalize_review_gate.total_command_count#}}
+
+          - library 命令数：{{#normalize_review_gate.library_command_count#}}
+
+          - generated 命令数：{{#normalize_review_gate.generated_command_count#}}
+
+          - generated 命令列表：{{#normalize_review_gate.generated_command_list#}}
+
+
+          完整性结论：{{#normalize_review_gate.integrity_summary#}}
+
+
+          说明：
+
+          1. 系统已阻断自动执行；
+
+          2. 如需继续，请由管理员线下执行，或改写为更明确的只读巡检或前置检查请求后重新提交。'
+        selected: false
+        title: 阻断答复
+        type: answer
+        variables: []
+      height: 412
+      id: answer_reject
+      position:
+        x: 1633.618811802617
+        y: -670.6165430665642
+      positionAbsolute:
+        x: 1633.618811802617
+        y: -670.6165430665642
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '候选命令请求体生成失败，当前还没有进入 Win Agent 的 HTTP 调用阶段。
+
+
+          这通常说明问题出在命令规划或规范化步骤，而不是 execute 接口本身。请优先检查：
+
+          1. 命令规划节点是否返回了合法 JSON；
+
+          2. commands 数组是否为空，或某条命令缺少 id / shell；
+
+          3. 自生成命令是否被模型输出成了解释文字、Markdown 或伪代码；
+
+          4. 如果是全量检查分支，是否把额外补充命令写进了 commands 结构。
+
+
+          只有规范化请求体成功后，流程才会继续调用 Win Agent execute 接口。请查看规范化请求体节点。'
+        selected: false
+        title: 请求体生成失败
+        type: answer
+        variables: []
+      height: 308
+      id: answer_request_payload_error
+      position:
+        x: 1633.618811802617
+        y: 161.50130548775263
+      positionAbsolute:
+        x: 1633.618811802617
+        y: 161.50130548775263
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: 'Win Agent execute 接口已返回结果，但“结果整理”节点在解析或格式化返回内容时发生异常，因此当前失败不属于网络或
+          HTTP 调用失败，命令很可能已经在 Windows 主机上执行。
+
+
+          当前 HTTP 状态码：{{#execute_http.status_code#}}
+
+
+          请优先检查：
+
+          1. execute_http.body 是否仍符合结果整理代码预期的 JSON 结构；
+
+          2. 结果整理 code 节点对空值、字段缺失和类型转换的处理；
+
+          3. 如需排障，请在运行历史中查看 execute_http.body 原始返回并与结果整理代码对照。'
+        selected: false
+        title: 结果整理失败
+        type: answer
+        variables: []
+      height: 311
+      id: answer_result_format_error
+      position:
+        x: 2185.858102938631
+        y: -661.854259889411
+      positionAbsolute:
+        x: 2185.858102938631
+        y: -661.854259889411
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: '{}'
+          type: json
+        code: "def main(machine_ip: str, win_agent_port: str):\n    host = (machine_ip\
+          \ or \"\").strip()\n    port = (win_agent_port or \"8765\").strip()\n  \
+          \  if not host:\n        raise ValueError(\"machine_ip 不能为空\")\n    port_num\
+          \ = int(port)\n    if port_num < 1 or port_num > 65535:\n        raise ValueError(\"\
+          win_agent_port 必须在 1-65535 之间\")\n    base_url = f\"http://{host}:{port_num}\"\
+          \n    return {\"machine_ip\": host, \"win_agent_port\": str(port_num), \"\
+          base_url\": base_url, \"health_url\": f\"{base_url}/health\"}"
+        code_language: python3
+        desc: ''
+        error_strategy: fail-branch
+        headers: Content-Type:application/json
+        method: post
+        outputs:
+          base_url:
+            children: null
+            type: string
+          health_url:
+            children: null
+            type: string
+          machine_ip:
+            children: null
+            type: string
+          win_agent_port:
+            children: null
+            type: string
+        params: ''
+        retry_config:
+          max_retries: 0
+          retry_enabled: false
+          retry_interval: 1000
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 20000
+          max_read_timeout: 20000
+          max_write_timeout: 20000
+        title: 拼接 Agent 地址
+        type: code
+        url: http://localhost/build-agent-base-url
+        variables:
+        - value_selector:
+          - '1779088244107'
+          - machine_ip
+          variable: machine_ip
+        - value_selector:
+          - '1779088244107'
+          - win_agent_port
+          variable: win_agent_port
+      height: 88
+      id: build_agent_base_url
+      position:
+        x: -43.03910490389529
+        y: 98.88701511520534
+      positionAbsolute:
+        x: -43.03910490389529
+        y: 98.88701511520534
+      selected: false
+      sourcePosition: null
+      targetPosition: null
+      type: custom
+      width: 242
+    - data:
+        agent_parameters:
+          instruction:
+            type: constant
+            value: '你是 Windows 巡检问答助手。当前这条分支是巡检信息无关分支，你需要根据用户问题回答。
+
+              全程用中文回复。'
+          maximum_iterations:
+            type: constant
+            value: 102
+          model:
+            type: constant
+            value:
+              completion_params:
+                max_tokens: 1200
+                temperature: 0.1
+              mode: chat
+              model: minimax-m2.7
+              model_type: llm
+              provider: langgenius/minimax/minimax
+          query:
+            type: constant
+            value: '用户问题：{{#sys.query#}}
+
+
+              命令库 JSON：{{#env.COMMAND_LIBRARY_JSON#}}
+
+
+              请直接回答，不要执行巡检。'
+          tools:
+            type: constant
+            value:
+            - enabled: true
+              extra:
+                description: 一个用于获取当前时间的工具。
+              parameters: {}
+              provider_name: time
+              provider_show_name: time
+              schemas:
+              - default: '%Y-%m-%d %H:%M:%S'
+                form: form
+                label: Format
+                name: format
+                options: []
+                required: false
+                type: string
+              - default: UTC
+                form: form
+                label: Timezone
+                name: timezone
+                options:
+                - label: UTC
+                  value: UTC
+                required: false
+                type: select
+              settings:
+                format:
+                  value:
+                    type: constant
+                    value: '%Y-%m-%d %H:%M:%S'
+                timezone:
+                  value:
+                    type: constant
+                    value: UTC
+              tool_description: 一个用于获取当前时间的工具。
+              tool_label: 获取当前时间
+              tool_name: current_time
+              type: builtin
+            - enabled: true
+              extra:
+                description: 运行一段代码并返回结果。当您使用较低质量的模型时，请确保有一些提示帮助 LLM 理解如何编写代码。
+              parameters:
+                code:
+                  auto: 1
+                  value: null
+                language:
+                  auto: 1
+                  value: null
+              provider_name: code
+              provider_show_name: code
+              settings: {}
+              tool_description: 运行一段代码并返回结果。当您使用较低质量的模型时，请确保有一些提示帮助 LLM 理解如何编写代码。
+              tool_label: 代码解释器
+              tool_name: simple_code
+              type: builtin
+        agent_strategy_label: ReAct
+        agent_strategy_name: ReAct
+        agent_strategy_provider_name: langgenius/agent/agent
+        desc: ''
+        isInIteration: null
+        isInLoop: null
+        iteration_id: null
+        loop_id: null
+        memory:
+          query_prompt_template: '你是 Windows 巡检问答助手。你的任务是直接回答关于 Windows、AD、Exchange
+            巡检的解释型问题，包括命令含义、命令输出怎么看、报告怎么看、巡检项是什么意思、为什么被判定为高风险、什么时候需要人工介入。必须遵守以下规则：
+
+            1. 只做解释和答疑，不得生成执行计划，不得输出 JSON。
+
+            2. 如果问题涉及命令，优先基于 COMMAND_LIBRARY_JSON 解释用途、常见输出和判断要点。
+
+            3. 如果问题涉及报告或风险，先解释概念，再给出简洁建议。
+
+            4. 全部使用中文，简洁专业。'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 100
+        meta:
+          minimum_dify_version: 1.7.0
+          version: 0.0.2
+        output_schema: {}
+        plugin_unique_identifier: langgenius/agent:0.0.37@a5dcc6ea00bca23439b49ff7d65704f3f5dd6ce2ca353205e62278e2148d84b6
+        selected: true
+        title: 直接问答
+        tool_node_version: '2'
+        type: agent
+      height: 188
+      id: direct_answer_agent
+      position:
+        x: 565.4914631531302
+        y: -26.09556555283804
+      positionAbsolute:
+        x: 565.4914631531302
+        y: -26.09556555283804
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - type: text
+            value: '{{#normalize_request.body#}}'
+          type: raw-text
+        error_strategy: fail-branch
+        headers: Content-Type:application/json
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: 执行 Win Agent
+        type: http-request
+        url: '{{#build_agent_base_url.base_url#}}/api/v1/execute'
+        variables: []
+      height: 176
+      id: execute_http
+      position:
+        x: 1925.6164332926485
+        y: -158.2517503968846
+      positionAbsolute:
+        x: 1925.6164332926485
+        y: -158.2517503968846
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - type: text
+            value: '{}'
+          type: json
+        error_strategy: fail-branch
+        headers: Content-Type:application/json
+        method: get
+        params: ''
+        retry_config:
+          max_retries: 1
+          retry_enabled: true
+          retry_interval: 200
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 5000
+          max_read_timeout: 5000
+          max_write_timeout: 5000
+        title: 健康检查
+        type: http-request
+        url: '{{#build_agent_base_url.health_url#}}'
+        variables: []
+      height: 160
+      id: health_check_http
+      position:
+        x: -37.517844343736556
+        y: 237.4542274009529
+      positionAbsolute:
+        x: -37.517844343736556
+        y: 237.4542274009529
+      selected: false
+      sourcePosition: null
+      targetPosition: null
+      type: custom
+      width: 242
+    - data:
+        delivery_methods:
+        - enabled: true
+          id: 4743ef8d-1491-49e2-a5e5-e916aad876fd
+          type: webapp
+        form_content: '## Windows 巡检命令人工审批
+
+
+          ### 用户原始请求
+
+          {{#sys.query#}}
+
+
+          ### 候选命令索引
+
+          {{#normalize_review_gate.planner_text#}}
+
+
+          ### 命令审阅总表
+
+          {{#normalize_review_gate.review_summary#}}
+
+
+          ### 安全复核结论
+
+          | 项目 | 内容 |
+
+          |---|---|
+
+          | 整体风险级别 | {{#normalize_review_gate.risk_level#}} |
+
+          | 是否为全量检查 | {{#normalize_review_gate.is_full_inspection#}} |
+
+          | 总命令数 | {{#normalize_review_gate.total_command_count#}} |
+
+          | 标准命令库命令数 | {{#normalize_review_gate.library_command_count#}} |
+
+          | 自动生成命令数 | {{#normalize_review_gate.generated_command_count#}} |
+
+          | 自动生成命令列表 | {{#normalize_review_gate.generated_command_list#}} |
+
+          | 来源异常命令 | {{#normalize_review_gate.unknown_source_command_list#}} |
+
+          | 命令库版本 | {{#normalize_review_gate.command_library_version#}} |
+
+          | 期望标准命令库命令数 | {{#normalize_review_gate.expected_library_count#}} |
+
+          | 实际标准命令库命令数 | {{#normalize_review_gate.actual_library_count#}} |
+
+          | 缺失命令 | {{#normalize_review_gate.missing_library_commands#}} |
+
+          | 完整性结论 | {{#normalize_review_gate.integrity_summary#}} |
+
+
+          ### 复核说明
+
+          {{#normalize_review_gate.review_summary#}}
+
+
+          ### 完整查询命令
+
+          {{#normalize_review_gate.planner_text#}}
+
+
+          ### 请人工确认
+
+          - 若批准，系统将按上面的候选命令原样执行。
+
+          - 若驳回，系统将阻断自动执行，并要求线下处理或重新提交更安全的巡检请求。'
+        inputs: []
+        selected: false
+        timeout: 1
+        timeout_unit: day
+        title: 人工审批
+        type: human-input
+        user_actions:
+        - button_style: default
+          id: approve_exec
+          title: 批准执行审查后的命令
+        - button_style: default
+          id: reject_block
+          title: 驳回并阻断
+      height: 190
+      id: human_review
+      position:
+        x: 1159.1878295724882
+        y: -164.76586391258687
+      positionAbsolute:
+        x: 1159.1878295724882
+        y: -164.76586391258687
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: '{}'
+          type: json
+        code: "import json\n\ndef _pick_planner_text(full_planner_text: str, partial_planner_text:\
+          \ str):\n    full_text = (full_planner_text or '').strip()\n    partial_text\
+          \ = (partial_planner_text or '').strip()\n    return full_text or partial_text\n\
+          \ndef _load_payload(planner_text: str):\n    text = (planner_text or '').strip()\n\
+          \    if not text:\n        raise ValueError('planner returned empty text')\n\
+          \    if '```' in text:\n        parts = [part.strip() for part in text.split('```')\
+          \ if part.strip()]\n        for part in parts:\n            if part.startswith('json'):\n\
+          \                text = part[4:].strip()\n                break\n    start\
+          \ = text.find('{')\n    end = text.rfind('}')\n    if start != -1 and end\
+          \ != -1 and end >= start:\n        text = text[start:end + 1]\n    return\
+          \ json.loads(text)\n\ndef _build_command_lookup(command_library_json: str):\n\
+          \    raw = (command_library_json or '').strip()\n    if not raw:\n     \
+          \   return {}\n    library = json.loads(raw)\n    commands = library.get('commands')\
+          \ if isinstance(library, dict) else []\n    if not isinstance(commands,\
+          \ list):\n        return {}\n    lookup = {}\n    for item in commands:\n\
+          \        if not isinstance(item, dict):\n            continue\n        command_id\
+          \ = str(item.get('id') or '').strip()\n        shell = str(item.get('shell')\
+          \ or item.get('command') or '').strip()\n        if command_id and shell:\n\
+          \            lookup[command_id] = shell\n    return lookup\n\ndef main(full_planner_text:\
+          \ str, partial_planner_text: str, command_library_json: str, machine_ip:\
+          \ str):\n    planner_text = _pick_planner_text(full_planner_text, partial_planner_text)\n\
+          \    payload = _load_payload(planner_text)\n    commands = payload.get('commands')\n\
+          \    if not isinstance(commands, list) or not commands:\n        raise ValueError('planner\
+          \ commands missing')\n    command_lookup = _build_command_lookup(command_library_json)\n\
+          \    normalized = []\n    for index, item in enumerate(commands, start=1):\n\
+          \        if isinstance(item, dict):\n            command_id = str(item.get('id')\
+          \ or f'cmd_{index}').strip()\n            shell = str(item.get('shell')\
+          \ or item.get('command') or '').strip()\n            if not shell:\n   \
+          \             shell = str(command_lookup.get(command_id) or '').strip()\n\
+          \        else:\n            command_id = f'cmd_{index}'\n            shell\
+          \ = str(item).strip()\n        if not shell:\n            raise ValueError(f'command\
+          \ shell missing: {command_id}')\n        normalized.append({'id': command_id,\
+          \ 'shell': shell})\n    task_id = str(payload.get('task_id') or '').strip()\
+          \ or 'wf-unknown'\n    target_host = (machine_ip or '').strip() or str(payload.get('target_host')\
+          \ or '').strip() or '10.0.18.212'\n    body_payload = {'task_id': task_id,\
+          \ 'target_host': target_host, 'commands': normalized}\n    return {'body':\
+          \ json.dumps(body_payload, ensure_ascii=False)}"
+        code_language: python3
+        desc: ''
+        error_strategy: fail-branch
+        headers: Content-Type:application/json
+        method: post
+        outputs:
+          body:
+            children: null
+            type: string
+        params: ''
+        retry_config:
+          max_retries: 0
+          retry_enabled: false
+          retry_interval: 1000
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 20000
+          max_read_timeout: 20000
+          max_write_timeout: 20000
+        title: 规范化请求体
+        type: code
+        url: http://localhost/normalize-request
+        variables:
+        - value_selector:
+          - '1779159173132'
+          - text
+          variable: full_planner_text
+        - value_selector:
+          - planner_agent
+          - text
+          variable: partial_planner_text
+        - value_selector:
+          - env
+          - COMMAND_LIBRARY_JSON
+          variable: command_library_json
+        - value_selector:
+          - '1779088244107'
+          - machine_ip
+          variable: machine_ip
+      dragging: false
+      height: 88
+      id: normalize_request
+      position:
+        x: 1601.5463878183757
+        y: -97.3516597549579
+      positionAbsolute:
+        x: 1601.5463878183757
+        y: -97.3516597549579
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: '{}'
+          type: json
+        code: "import json\n\ndef _choose_text(*candidates):\n    for item in candidates:\n\
+          \        text = (item or '').strip()\n        if text:\n            return\
+          \ text\n    return ''\n\ndef _extract_json(text: str):\n    raw = (text\
+          \ or '').strip()\n    if not raw:\n        return {}\n    fence = chr(96)\
+          \ * 3\n    if fence in raw:\n        parts = [part.strip() for part in raw.split(fence)\
+          \ if part.strip()]\n        for part in parts:\n            if part.startswith('json'):\n\
+          \                raw = part[4:].strip()\n                break\n    start\
+          \ = raw.find('{')\n    end = raw.rfind('}')\n    if start != -1 and end\
+          \ != -1 and end >= start:\n        raw = raw[start:end + 1]\n    return\
+          \ json.loads(raw)\n\ndef _load_command_library(command_library_json: str):\n\
+          \    raw = (command_library_json or '').strip()\n    if not raw:\n     \
+          \   return 'unknown', []\n    library = json.loads(raw)\n    version = str(library.get('version')\
+          \ or '').strip() or 'unknown'\n    commands = library.get('commands') if\
+          \ isinstance(library, dict) else []\n    normalized = []\n    if isinstance(commands,\
+          \ list):\n        for item in commands:\n            if not isinstance(item,\
+          \ dict):\n                continue\n            command_id = str(item.get('id')\
+          \ or '').strip()\n            shell = str(item.get('shell') or item.get('command')\
+          \ or '').strip()\n            if command_id and shell:\n               \
+          \ normalized.append({'id': command_id, 'shell': shell})\n    return version,\
+          \ normalized\n\ndef _normalize_commands(commands):\n    normalized = []\n\
+          \    if not isinstance(commands, list):\n        return normalized\n   \
+          \ for index, item in enumerate(commands, start=1):\n        if isinstance(item,\
+          \ dict):\n            command_id = str(item.get('id') or f'cmd_{index}').strip()\n\
+          \            shell = str(item.get('shell') or item.get('command') or '').strip()\n\
+          \            source = str(item.get('source') or '').strip().lower()\n  \
+          \      else:\n            command_id = f'cmd_{index}'\n            shell\
+          \ = str(item).strip()\n            source = ''\n        if source not in\
+          \ {'library', 'generated'}:\n            source = 'unknown'\n        normalized.append({'id':\
+          \ command_id, 'shell': shell, 'source': source})\n    return normalized\n\
+          \ndef _join_or_none(values):\n    items = [str(item).strip() for item in\
+          \ values if str(item).strip()]\n    return '、'.join(items) if items else\
+          \ '无'\n\ndef _build_integrity_summary(plan_mode, expected_library_ids, actual_library_ids,\
+          \ generated_ids, unknown_source_ids):\n    if plan_mode != 'full_inspection':\n\
+          \        return '当前为非全量检查，不适用全量完整性校验。'\n    missing_ids = [cid for cid in\
+          \ expected_library_ids if cid not in actual_library_ids]\n    issues = []\n\
+          \    if actual_library_ids != expected_library_ids:\n        issues.append('library\
+          \ 命令顺序或完整性不一致')\n    if missing_ids:\n        issues.append('缺少 library\
+          \ 命令：' + _join_or_none(missing_ids))\n    if generated_ids:\n        issues.append('追加\
+          \ generated 命令：' + _join_or_none(generated_ids))\n    if unknown_source_ids:\n\
+          \        issues.append('source 异常命令：' + _join_or_none(unknown_source_ids))\n\
+          \    if not issues:\n        return f'完整性通过：期望 {len(expected_library_ids)}\
+          \ 条 library 命令，实际 {len(actual_library_ids)} 条，顺序一致，无缺失，无额外 generated 命令。'\n\
+          \    return '完整性未通过：' + '；'.join(issues)\n\ndef main(full_review_text: str,\
+          \ partial_review_text: str, full_planner_text: str, partial_planner_text:\
+          \ str, command_library_json: str):\n    review_text = _choose_text(full_review_text,\
+          \ partial_review_text)\n    planner_text = _choose_text(full_planner_text,\
+          \ partial_planner_text)\n\n    try:\n        review_payload = _extract_json(review_text)\n\
+          \    except Exception:\n        review_payload = {}\n\n    try:\n      \
+          \  planner_payload = _extract_json(planner_text)\n    except Exception:\n\
+          \        planner_payload = {}\n\n    decision = str(review_payload.get('decision')\
+          \ or review_payload.get('gate_decision') or '').strip().lower()\n    if\
+          \ decision not in {'auto_execute', 'human_review'}:\n        decision =\
+          \ 'human_review'\n\n    risk_level = str(review_payload.get('risk_level')\
+          \ or '').strip().lower()\n    if not risk_level:\n        risk_level = 'low'\
+          \ if decision == 'auto_execute' else 'uncertain'\n\n    summary = str(review_payload.get('summary')\
+          \ or review_payload.get('review_summary') or review_payload.get('reason')\
+          \ or '').strip()\n    if not summary:\n        summary = '全部候选命令通过自动安全复核，可直接执行。'\
+          \ if decision == 'auto_execute' else '候选命令存在高风险或不确定性，需人工审核后决定是否执行。'\n\n\
+          \    library_version, library_commands = _load_command_library(command_library_json)\n\
+          \    expected_library_ids = [item['id'] for item in library_commands]\n\n\
+          \    plan_mode = str(planner_payload.get('plan_mode') or '').strip().lower()\n\
+          \    full_text = (full_planner_text or '').strip()\n    chosen_text = (planner_text\
+          \ or '').strip()\n    if plan_mode not in {'full_inspection', 'targeted_inspection'}:\n\
+          \        plan_mode = 'full_inspection' if full_text and chosen_text == full_text\
+          \ else 'targeted_inspection'\n\n    commands = _normalize_commands(planner_payload.get('commands'))\n\
+          \    total_count = len(commands)\n    library_ids = [item['id'] for item\
+          \ in commands if item['source'] == 'library']\n    generated_ids = [item['id']\
+          \ for item in commands if item['source'] == 'generated']\n    unknown_source_ids\
+          \ = [item['id'] for item in commands if item['source'] == 'unknown']\n \
+          \   missing_library_ids = [cid for cid in expected_library_ids if cid not\
+          \ in library_ids]\n    integrity_summary = _build_integrity_summary(plan_mode,\
+          \ expected_library_ids, library_ids, generated_ids, unknown_source_ids)\n\
+          \n    return {\n        'decision': decision,\n        'risk_level': risk_level,\n\
+          \        'review_summary': summary,\n        'planner_text': planner_text,\n\
+          \        'plan_mode': plan_mode,\n        'is_full_inspection': '是' if plan_mode\
+          \ == 'full_inspection' else '否',\n        'total_command_count': str(total_count),\n\
+          \        'library_command_count': str(len(library_ids)),\n        'generated_command_count':\
+          \ str(len(generated_ids)),\n        'generated_command_list': _join_or_none(generated_ids),\n\
+          \        'unknown_source_command_list': _join_or_none(unknown_source_ids),\n\
+          \        'command_library_version': library_version,\n        'expected_library_count':\
+          \ str(len(expected_library_ids)) if plan_mode == 'full_inspection' else\
+          \ '不适用',\n        'actual_library_count': str(len(library_ids)) if plan_mode\
+          \ == 'full_inspection' else '不适用',\n        'missing_library_commands':\
+          \ _join_or_none(missing_library_ids) if plan_mode == 'full_inspection' else\
+          \ '不适用',\n        'integrity_summary': integrity_summary,\n    }"
+        code_language: python3
+        desc: ''
+        error_strategy: fail-branch
+        headers: Content-Type:application/json
+        method: post
+        outputs:
+          actual_library_count:
+            children: null
+            type: string
+          command_library_version:
+            children: null
+            type: string
+          decision:
+            children: null
+            type: string
+          expected_library_count:
+            children: null
+            type: string
+          generated_command_count:
+            children: null
+            type: string
+          generated_command_list:
+            children: null
+            type: string
+          integrity_summary:
+            children: null
+            type: string
+          is_full_inspection:
+            children: null
+            type: string
+          library_command_count:
+            children: null
+            type: string
+          missing_library_commands:
+            children: null
+            type: string
+          plan_mode:
+            children: null
+            type: string
+          planner_text:
+            children: null
+            type: string
+          review_summary:
+            children: null
+            type: string
+          risk_level:
+            children: null
+            type: string
+          total_command_count:
+            children: null
+            type: string
+          unknown_source_command_list:
+            children: null
+            type: string
+        params: ''
+        retry_config:
+          max_retries: 0
+          retry_enabled: false
+          retry_interval: 1000
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 20000
+          max_read_timeout: 20000
+          max_write_timeout: 20000
+        title: 规范化审查结果
+        type: code
+        url: http://localhost/normalize-request
+        variables:
+        - value_selector:
+          - '17791592036430'
+          - text
+          variable: full_review_text
+        - value_selector:
+          - review_agent
+          - text
+          variable: partial_review_text
+        - value_selector:
+          - '1779159173132'
+          - text
+          variable: full_planner_text
+        - value_selector:
+          - planner_agent
+          - text
+          variable: partial_planner_text
+        - value_selector:
+          - env
+          - COMMAND_LIBRARY_JSON
+          variable: command_library_json
+      dragging: false
+      height: 88
+      id: normalize_review_gate
+      position:
+        x: 1153.3395174701266
+        y: 392.17584885187716
+      positionAbsolute:
+        x: 1153.3395174701266
+        y: 392.17584885187716
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        agent_parameters:
+          instruction:
+            type: constant
+            value: '你是 Windows 定向巡检命令规划器。当前分支已经被判定为不是全量检查。你的任务是只围绕用户当前问题，规划最相关的 Windows
+              巡检或排障命令，并输出可发送给 Win Agent 的候选 JSON 请求体。
+
+
+
+              1. 只输出能直接回答当前问题的命令，不要顺带输出整套全量巡检内容。
+
+              2. 优先理解用户真正关心的对象、现象和范围，然后只生成与该问题直接相关的命令。
+
+              3. 如果 COMMAND_LIBRARY_JSON 中存在完全适用且更安全的命令，优先直接复用原始 shell；这类命令的 source
+              必须写 library。
+
+              4. 如果不存在完全适用命令，可以自行生成新的命令；这类命令的 source 必须写 generated。
+
+              5. 对 AD 相关请求，如果当前主机角色和 AD 工具可用性未知，应优先安排 host_domain_role_probe、ad_tooling_probe、ad_ntds_service_probe；但只在和用户问题直接相关时追加后续命令，不要扩展成全量
+              AD 巡检。
+
+              6. 如果用户明确要求高风险操作，且你能准确生成对应命令，可以把该命令作为候选命令输出；如果不能确定其安全性，只输出最相关的前置检查命令，并在
+              planning_note 中说明当前仅给出前置检查。
+
+              7. commands 输出 1 到 4 条命令；每条命令必须是对象，至少包含 id、shell、source。
+
+              8. 自生成 shell 必须完整、可直接执行、不要保留占位符、不要输出伪代码或解释文字。
+
+              9. target_host 固定使用开始节点 machine_ip；task_id 固定为 wf-{{#sys.workflow_run_id#}}。
+
+              10. 只输出 JSON 对象，不要 Markdown，不要解释，不要多余文本。
+
+              11. 建议输出字段至少包含 task_id、target_host、plan_mode、purpose、commands，可按需补充
+              planning_note、risk_level。
+
+              12. plan_mode 固定写 targeted_inspection。'
+          maximum_iterations:
+            type: constant
+            value: 81
+          model:
+            type: constant
+            value:
+              completion_params:
+                max_tokens: 1200
+                temperature: 0.1
+              mode: chat
+              model: minimax-m2.7
+              model_type: llm
+              provider: langgenius/minimax/minimax
+          query:
+            type: constant
+            value: '当前分支：非全量检查
+
+
+              用户问题：{{#sys.query#}}
+
+
+              开始节点 machine_ip：{{#1779088244107.machine_ip#}}
+
+              开始节点 win_agent_port：{{#1779088244107.win_agent_port#}}
+
+
+              命令库 JSON（仅供参考；如存在完全适用且更安全的包装命令，优先复用并标记 source=library，否则可自行生成并标记 source=generated）：{{#env.COMMAND_LIBRARY_JSON#}}
+
+
+              请输出候选执行计划 JSON。只围绕用户当前问题输出，不要扩展为全量巡检。target_host 固定使用开始节点 machine_ip，task_id
+              固定使用 wf-{{#sys.workflow_run_id#}}。'
+          tools:
+            type: constant
+            value:
+            - enabled: true
+              extra:
+                description: 一个用于获取当前时间的工具。
+              parameters: {}
+              provider_name: time
+              provider_show_name: time
+              schemas:
+              - default: '%Y-%m-%d %H:%M:%S'
+                form: form
+                label: Format
+                name: format
+                options: []
+                required: false
+                type: string
+              - default: UTC
+                form: form
+                label: Timezone
+                name: timezone
+                options:
+                - label: UTC
+                  value: UTC
+                required: false
+                type: select
+              settings:
+                format:
+                  value:
+                    type: constant
+                    value: '%Y-%m-%d %H:%M:%S'
+                timezone:
+                  value:
+                    type: constant
+                    value: UTC
+              tool_description: 一个用于获取当前时间的工具。
+              tool_label: 获取当前时间
+              tool_name: current_time
+              type: builtin
+        agent_strategy_label: ReAct
+        agent_strategy_name: ReAct
+        agent_strategy_provider_name: langgenius/agent/agent
+        desc: ''
+        isInIteration: null
+        isInLoop: null
+        iteration_id: null
+        loop_id: null
+        memory:
+          query_prompt_template: '你是 Windows 定向巡检命令规划器。当前分支已经被判定为不是全量检查。你的任务是只围绕用户当前问题，规划最相关的
+            Windows 巡检或排障命令，并输出可发送给 Win Agent 的候选 JSON 请求体。
+
+            1. 只输出能直接回答当前问题的命令，不要顺带输出整套全量巡检内容。
+
+            2. 优先理解用户真正关心的对象、现象和范围，然后只生成与该问题直接相关的命令。
+
+            3. 如果 COMMAND_LIBRARY_JSON 中存在完全适用且更安全的命令，优先直接复用原始 shell；这类命令的 source
+            必须写 library。
+
+            4. 如果不存在完全适用命令，可以自行生成新的命令；这类命令的 source 必须写 generated。
+
+            5. 对 AD 相关请求，如果当前主机角色和 AD 工具可用性未知，应优先安排 host_domain_role_probe、ad_tooling_probe、ad_ntds_service_probe；但只在和用户问题直接相关时追加后续命令，不要扩展成全量
+            AD 巡检。
+
+            6. 如果用户明确要求高风险操作，且你能准确生成对应命令，可以把该命令作为候选命令输出；如果不能确定其安全性，只输出最相关的前置检查命令，并在
+            planning_note 中说明当前仅给出前置检查。
+
+            7. commands 输出 1 到 4 条命令；每条命令必须是对象，至少包含 id、shell、source。
+
+            8. 自生成 shell 必须完整、可直接执行、不要保留占位符、不要输出伪代码或解释文字。
+
+            9. target_host 固定使用开始节点 machine_ip；task_id 固定为 wf-{{#sys.workflow_run_id#}}。
+
+            10. 只输出 JSON 对象，不要 Markdown，不要解释，不要多余文本。
+
+            11. 建议输出字段至少包含 task_id、target_host、plan_mode、purpose、commands，可按需补充 planning_note、risk_level。
+
+            12. plan_mode 固定写 targeted_inspection。'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 100
+        meta:
+          minimum_dify_version: 1.7.0
+          version: 0.0.2
+        output_schema: {}
+        plugin_unique_identifier: langgenius/agent:0.0.37@a5dcc6ea00bca23439b49ff7d65704f3f5dd6ce2ca353205e62278e2148d84b6
+        selected: false
+        title: 巡检命令规划不是全量检查
+        tool_node_version: '2'
+        type: agent
+      height: 188
+      id: planner_agent
+      position:
+        x: 565.4914631531302
+        y: 481.0789250737208
+      positionAbsolute:
+        x: 565.4914631531302
+        y: 481.0789250737208
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: '{}'
+          type: json
+        code: "import json\n\ndef _load_payload(execute_body: str):\n    text = (execute_body\
+          \ or '').strip()\n    if not text:\n        return {}\n    start = text.find('{')\n\
+          \    end = text.rfind('}')\n    if start != -1 and end != -1 and end >=\
+          \ start:\n        text = text[start:end + 1]\n    return json.loads(text)\n\
+          \ndef _parse_kv_block(text: str):\n    result = {}\n    for line in (text\
+          \ or '').splitlines():\n        if ':' not in line:\n            continue\n\
+          \        key, value = line.split(':', 1)\n        result[key.strip()] =\
+          \ value.strip()\n    return result\n\ndef _status_text(status: str):\n \
+          \   mapping = {\n        'succeeded': '全部命令执行成功',\n        'partially_failed':\
+          \ '部分命令执行失败',\n        'failed': '全部命令执行失败',\n    }\n    return mapping.get(status,\
+          \ status or '未知')\n\ndef _bool_text(value: str):\n    normalized = (value\
+          \ or '').strip().lower()\n    return normalized in {'true', '1', 'yes'}\n\
+          \ndef _to_int(value):\n    try:\n        return int(str(value).strip())\n\
+          \    except Exception:\n        return 0\n\ndef _clip(text: str, limit:\
+          \ int = 1200):\n    raw = (text or '').strip()\n    if len(raw) <= limit:\n\
+          \        return raw\n    return raw[:limit] + '...（已截断）'\n\ndef _indent(text:\
+          \ str):\n    return '\\n'.join('    ' + line for line in (text or '').splitlines())\n\
+          \ndef _contains_any(text: str, patterns):\n    normalized = (text or '').lower()\n\
+          \    return any(pattern.lower() in normalized for pattern in patterns)\n\
+          \ndef _classify_command_failure(command_id: str, stdout: str, stderr: str,\
+          \ return_code, role_info: dict):\n    issues = []\n    combined = '\\n'.join([stdout\
+          \ or '', stderr or ''])\n    role_text = str(role_info.get('DomainRoleText')\
+          \ or '').strip()\n    if command_id.startswith('ad_') and role_text and\
+          \ role_text not in {'BackupDomainController', 'PrimaryDomainController'}:\n\
+          \        issues.append('主机角色不匹配')\n    if _contains_any(combined, ['未发现\
+          \ NTDS 服务', '不是域控制器', 'domain controller', '在域控制器上执行', 'not a domain controller']):\n\
+          \        issues.append('主机角色不匹配')\n    if _contains_any(combined, ['activedirectory\
+          \ powershell 模块不可用', 'module could not be loaded', '模块不可用', '找不到 ActiveDirectory',\
+          \ 'rsat-ad-powershell']):\n        issues.append('模块缺失')\n    if _contains_any(combined,\
+          \ ['repadmin 不可用', 'dcdiag 不可用', '不是内部或外部命令', 'not recognized as an internal\
+          \ or external command', 'dnsserver 模块或 dns 服务器工具不可用', '工具不可用']):\n     \
+          \   issues.append('工具缺失')\n    if _contains_any(combined, ['access is denied',\
+          \ '拒绝访问', '需要管理员权限', 'administrator', 'privilege', 'unauthorized', '未被授权',\
+          \ 'elevation']):\n        issues.append('权限不足')\n    if str(return_code)\
+          \ not in {'0', 'None', ''} and not issues:\n        issues.append('命令本身报错')\n\
+          \    return list(dict.fromkeys(issues))\n\ndef _build_next_steps(plan_mode:\
+          \ str, issue_map: dict, command_results: list, role_info: dict, tool_info:\
+          \ dict, generated_count: int):\n    suggestions = []\n    if issue_map.get('主机角色不匹配'):\n\
+          \        suggestions.append('如果后续要查 AD 复制、域控健康或域信息，请改在域控制器上重新执行。')\n   \
+          \ if issue_map.get('模块缺失') or issue_map.get('工具缺失'):\n        suggestions.append('优先补齐\
+          \ RSAT / 相关模块，或切换到已安装工具的服务器后再继续。')\n    if issue_map.get('权限不足'):\n    \
+          \    suggestions.append('请以管理员身份重新执行相关命令，或确认当前账户具备所需权限。')\n\n    combined_targets\
+          \ = ' '.join(\n        f\"{item.get('command_id') or item.get('id') or ''}\
+          \ {item.get('shell') or ''}\"\n        for item in command_results\n   \
+          \ ).lower()\n    if any(keyword in combined_targets for keyword in ['sql',\
+          \ 'mssql', 'sqlserver']):\n        suggestions.append('当前结果已涉及 SQL 服务，下一步建议继续查看\
+          \ SQL 服务状态、启动类型、实例端口和错误日志。')\n    if 'exchange' in combined_targets:\n \
+          \       suggestions.append('当前结果已涉及 Exchange，下一步建议继续查看 Exchange 组件状态、健康报告和数据库挂载状态。')\n\
+          \    if role_info.get('DomainRoleText') in {'BackupDomainController', 'PrimaryDomainController'}\
+          \ or _bool_text(tool_info.get('ActiveDirectoryModuleInstalled', '')):\n\
+          \        suggestions.append('如需继续排查域环境，可进一步执行 AD 复制、DCDiag、域信息或域控状态检查。')\n\
+          \    if plan_mode == 'full_inspection':\n        suggestions.append('本轮全量检查已完成，下一步建议基于上面的关键结论，发起更聚焦的定向巡检。')\n\
+          \    if generated_count > 0:\n        suggestions.append('本轮包含模型自生成命令，复盘时建议优先确认这些\
+          \ generated 命令是否已达到预期目的。')\n    if not suggestions:\n        suggestions.append('下一步建议基于失败归因或关键结论，继续发起更聚焦的定向检查。')\n\
+          \n    ordered = []\n    for item in suggestions:\n        if item not in\
+          \ ordered:\n            ordered.append(item)\n    return ordered\n\ndef\
+          \ main(\n    execute_body: str,\n    status_code=None,\n    plan_mode: str\
+          \ = '',\n    total_command_count: str = '',\n    library_command_count:\
+          \ str = '',\n    generated_command_count: str = '',\n    generated_command_list:\
+          \ str = '',\n    unknown_source_command_list: str = '',\n    command_library_version:\
+          \ str = '',\n    expected_library_count: str = '',\n    actual_library_count:\
+          \ str = '',\n    missing_library_commands: str = '',\n    integrity_summary:\
+          \ str = '',\n):\n    try:\n        payload = _load_payload(execute_body)\n\
+          \    except Exception:\n        raw = (execute_body or '').strip()\n   \
+          \     return {'summary': '## 执行结果\\n\\nWin Agent 返回内容无法解析。\\n\\n原始返回：\\\
+          n' + (raw or '<empty>')}\n\n    status = str(payload.get('status') or 'unknown')\n\
+          \    task_id = str(payload.get('task_id') or '')\n    target_host = str(payload.get('target_host')\
+          \ or '')\n    message = str(payload.get('message') or '').strip()\n    report_download_url\
+          \ = str(payload.get('report_download_url') or '').strip()\n    command_results\
+          \ = payload.get('command_results')\n    if not isinstance(command_results,\
+          \ list):\n        command_results = []\n\n    role_info = {}\n    tool_info\
+          \ = {}\n    ntds_missing = False\n    success_count = 0\n    failed_count\
+          \ = 0\n    issue_map = {'主机角色不匹配': [], '模块缺失': [], '工具缺失': [], '权限不足': [],\
+          \ '命令本身报错': []}\n    command_sections = []\n\n    for index, item in enumerate(command_results,\
+          \ start=1):\n        command_id = str(item.get('command_id') or item.get('id')\
+          \ or f'cmd_{index}')\n        return_code = item.get('return_code')\n  \
+          \      stdout = str(item.get('stdout') or '').strip()\n        stderr =\
+          \ str(item.get('stderr') or '').strip()\n        shell = str(item.get('shell')\
+          \ or '').strip()\n\n        if str(return_code) == '0':\n            success_count\
+          \ += 1\n        else:\n            failed_count += 1\n\n        if command_id\
+          \ == 'host_domain_role_probe':\n            role_info = _parse_kv_block(stdout)\n\
+          \        elif command_id == 'ad_tooling_probe':\n            tool_info =\
+          \ _parse_kv_block(stdout)\n        if '未发现 NTDS 服务' in stderr:\n       \
+          \     ntds_missing = True\n\n        issues = _classify_command_failure(command_id,\
+          \ stdout, stderr, return_code, role_info)\n        for issue in issues:\n\
+          \            if command_id not in issue_map[issue]:\n                issue_map[issue].append(command_id)\n\
+          \n        section = [\n            f'### {index}. {command_id}',\n     \
+          \       f'- 返回码：{return_code}',\n        ]\n        if shell:\n        \
+          \    section.append(f'- 执行命令：{shell}')\n        if issues:\n           \
+          \ section.append(f\"- 失败归因：{'、'.join(issues)}\")\n        if stdout:\n \
+          \           section.append('- 标准输出：')\n            section.append(_indent(_clip(stdout)))\n\
+          \        if stderr:\n            section.append('- 错误输出：')\n           \
+          \ section.append(_indent(_clip(stderr)))\n        command_sections.append('\\\
+          n'.join(section))\n\n    conclusions = []\n    domain_role_text = role_info.get('DomainRoleText')\n\
+          \    domain_name = role_info.get('Domain')\n    computer_name = role_info.get('ComputerName')\n\
+          \    host_label = computer_name or target_host or '该主机'\n\n    if domain_role_text:\n\
+          \        if domain_role_text in {'BackupDomainController', 'PrimaryDomainController'}:\n\
+          \            conclusions.append(f'当前主机 {host_label} 的角色为 {domain_role_text}，属于域控制器。')\n\
+          \        else:\n            domain_suffix = f'，属于域 {domain_name}' if domain_name\
+          \ else ''\n            conclusions.append(f'当前主机 {host_label} 的角色为 {domain_role_text}{domain_suffix}，不是域控制器。')\n\
+          \n    if tool_info:\n        missing_tools = []\n        if not _bool_text(tool_info.get('ActiveDirectoryModuleInstalled',\
+          \ '')):\n            missing_tools.append('ActiveDirectory PowerShell 模块')\n\
+          \        if not _bool_text(tool_info.get('RepadminAvailable', '')):\n  \
+          \          missing_tools.append('repadmin')\n        if not _bool_text(tool_info.get('DcdiagAvailable',\
+          \ '')):\n            missing_tools.append('dcdiag')\n        if missing_tools:\n\
+          \            conclusions.append('当前主机缺少或不可用的 AD 工具包括：' + '、'.join(missing_tools)\
+          \ + '。')\n\n    if ntds_missing:\n        conclusions.append('未发现 NTDS 服务，进一步说明当前主机不是域控制器。')\n\
+          \    if message:\n        conclusions.append(message)\n    if status in\
+          \ {'failed', 'partially_failed'} and not conclusions:\n        conclusions.append('请结合下面的业务失败归因与命令明细继续排查。')\n\
+          \    elif not conclusions:\n        conclusions.append('所有命令已执行完成，可以根据结果决定后续更有针对性的巡检。')\n\
+          \n    suggestions = _build_next_steps(\n        plan_mode=plan_mode,\n \
+          \       issue_map=issue_map,\n        command_results=command_results,\n\
+          \        role_info=role_info,\n        tool_info=tool_info,\n        generated_count=_to_int(generated_command_count),\n\
+          \    )\n\n    lines = [\n        '## 执行概览',\n        f'- 整体状态：{_status_text(status)}',\n\
+          \        f\"- HTTP 状态码：{status_code if status_code is not None else '未知'}\"\
+          ,\n        f\"- 任务标识：{task_id or '未知'}\",\n        f\"- 目标主机：{target_host\
+          \ or '未知'}\",\n        f'- 成功命令数：{success_count}',\n        f'- 失败命令数：{failed_count}',\n\
+          \        f\"- 规划模式：{plan_mode or 'unknown'}\",\n        f'- 规划命令总数：{_to_int(total_command_count)}',\n\
+          \        f'- library 命令数：{_to_int(library_command_count)}',\n        f'-\
+          \ generated 命令数：{_to_int(generated_command_count)}',\n    ]\n    if generated_command_list\
+          \ and generated_command_list != '无':\n        lines.append(f'- generated\
+          \ 命令列表：{generated_command_list}')\n    if unknown_source_command_list and\
+          \ unknown_source_command_list != '无':\n        lines.append(f'- source 异常命令：{unknown_source_command_list}')\n\
+          \    if report_download_url:\n        lines.append(f'- 报告地址：{report_download_url}')\n\
+          \n    lines.extend(['', '## 全量检查完整性回执'])\n    lines.append(f\"- 命令库版本：{command_library_version\
+          \ or 'unknown'}\")\n    lines.append(f\"- 期望 library 命令数：{expected_library_count\
+          \ or '不适用'}\")\n    lines.append(f\"- 实际 library 命令数：{actual_library_count\
+          \ or '不适用'}\")\n    lines.append(f\"- 缺失 library 命令：{missing_library_commands\
+          \ or '不适用'}\")\n    lines.append(f\"- 回执结论：{integrity_summary or '未生成'}\"\
+          )\n\n    lines.extend(['', '## 业务失败归因'])\n    categorized = False\n    for\
+          \ issue_name in ['主机角色不匹配', '模块缺失', '工具缺失', '权限不足', '命令本身报错']:\n       \
+          \ command_ids = issue_map.get(issue_name) or []\n        if command_ids:\n\
+          \            categorized = True\n            lines.append(f\"- {issue_name}：{'、'.join(command_ids)}\"\
+          )\n    if not categorized:\n        lines.append('- 本轮没有识别到明确的业务失败类型，或全部命令已成功执行。')\n\
+          \n    lines.extend(['', '## 关键结论'])\n    for item in conclusions:\n    \
+          \    lines.append(f'- {item}')\n\n    lines.extend(['', '## 下一步建议'])\n \
+          \   for item in suggestions:\n        lines.append(f'- {item}')\n\n    lines.extend(['',\
+          \ '## 命令明细'])\n    if command_sections:\n        lines.append('\\n\\n'.join(command_sections))\n\
+          \    else:\n        lines.append('- 本次返回中没有 command_results 明细。')\n\n  \
+          \  return {'summary': '\\n'.join(lines).strip()}"
+        code_language: python3
+        desc: ''
+        error_strategy: fail-branch
+        headers: Content-Type:application/json
+        method: post
+        outputs:
+          summary:
+            children: null
+            type: string
+        params: ''
+        retry_config:
+          max_retries: 0
+          retry_enabled: false
+          retry_interval: 1000
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 20000
+          max_read_timeout: 20000
+          max_write_timeout: 20000
+        title: 结果整理
+        type: code
+        url: http://localhost/format-execute-result
+        variables:
+        - value_selector:
+          - execute_http
+          - body
+          variable: execute_body
+        - value_selector:
+          - execute_http
+          - status_code
+          variable: status_code
+        - value_selector:
+          - normalize_review_gate
+          - plan_mode
+          variable: plan_mode
+        - value_selector:
+          - normalize_review_gate
+          - total_command_count
+          variable: total_command_count
+        - value_selector:
+          - normalize_review_gate
+          - library_command_count
+          variable: library_command_count
+        - value_selector:
+          - normalize_review_gate
+          - generated_command_count
+          variable: generated_command_count
+        - value_selector:
+          - normalize_review_gate
+          - generated_command_list
+          variable: generated_command_list
+        - value_selector:
+          - normalize_review_gate
+          - unknown_source_command_list
+          variable: unknown_source_command_list
+        - value_selector:
+          - normalize_review_gate
+          - command_library_version
+          variable: command_library_version
+        - value_selector:
+          - normalize_review_gate
+          - expected_library_count
+          variable: expected_library_count
+        - value_selector:
+          - normalize_review_gate
+          - actual_library_count
+          variable: actual_library_count
+        - value_selector:
+          - normalize_review_gate
+          - missing_library_commands
+          variable: missing_library_commands
+        - value_selector:
+          - normalize_review_gate
+          - integrity_summary
+          variable: integrity_summary
+      height: 88
+      id: result_agent
+      position:
+        x: 2233.5363946691314
+        y: -226.91371849336372
+      positionAbsolute:
+        x: 2233.5363946691314
+        y: -226.91371849336372
+      selected: false
+      sourcePosition: null
+      targetPosition: null
+      type: custom
+      width: 242
+    - data:
+        agent_parameters:
+          instruction:
+            type: constant
+            value: '你是 Windows 定向巡检命令安全复核器。你的任务是结合用户原始意图与非全量检查分支的候选命令，判断它们是否可以自动执行。COMMAND_LIBRARY_JSON
+              只是安全参考，不是唯一合法来源。
+
+              1. 先检查每条命令的 source 字段。source 只能是 library 或 generated。若缺失、拼错或与命令内容明显不符，decision
+              必须是 human_review。
+
+              2. 当 source=library 且命令与命令库中的安全包装命令完全一致时，可视为更高可信度的低风险命令。
+
+              3. 当 source=generated 时，如果命令语义明确、只读、低风险，也可以 auto_execute；但只要存在歧义、副作用风险、参数不明确，或你无法确认其安全性，就必须
+              human_review。
+
+              4. 只要用户原始请求包含高风险意图，任一命令会改系统状态，或 planner 只给出前置检查命令但用户真正要求的是后续高风险动作，也必须
+              human_review。
+
+              5. 不要因为命令不在 COMMAND_LIBRARY_JSON 中就机械判定 human_review；要综合 source 字段和命令语义本身判断。
+
+              6. 不要改写 planner 输出，只做审查。
+
+              7. 只输出 JSON，不要 Markdown，不要解释性前后缀。
+
+              8. 输出字段至少包含 decision、risk_level、summary。'
+          maximum_iterations:
+            type: constant
+            value: 43
+          model:
+            type: constant
+            value:
+              completion_params:
+                max_tokens: 1200
+                temperature: 0.1
+              mode: chat
+              model: minimax-m2.7
+              model_type: llm
+              provider: langgenius/minimax/minimax
+          query:
+            type: constant
+            value: '当前分支：非全量检查
+
+
+              用户问题：{{#sys.query#}}
+
+
+              planner 候选执行计划：{{#planner_agent.text#}}
+
+
+              命令库 JSON：{{#env.COMMAND_LIBRARY_JSON#}}
+
+
+              请输出审查 JSON。decision 只能是 auto_execute 或 human_review。'
+          tools:
+            type: constant
+            value:
+            - enabled: true
+              extra:
+                description: 一个用于获取当前时间的工具。
+              parameters: {}
+              provider_name: time
+              provider_show_name: time
+              schemas:
+              - default: '%Y-%m-%d %H:%M:%S'
+                form: form
+                label: Format
+                name: format
+                options: []
+                required: false
+                type: string
+              - default: UTC
+                form: form
+                label: Timezone
+                name: timezone
+                options:
+                - label: UTC
+                  value: UTC
+                required: false
+                type: select
+              settings:
+                format:
+                  value:
+                    type: constant
+                    value: '%Y-%m-%d %H:%M:%S'
+                timezone:
+                  value:
+                    type: constant
+                    value: UTC
+              tool_description: 一个用于获取当前时间的工具。
+              tool_label: 获取当前时间
+              tool_name: current_time
+              type: builtin
+        agent_strategy_label: ReAct
+        agent_strategy_name: ReAct
+        agent_strategy_provider_name: langgenius/agent/agent
+        desc: ''
+        isInIteration: null
+        isInLoop: null
+        iteration_id: null
+        loop_id: null
+        memory:
+          query_prompt_template: '你是 Windows 定向巡检命令安全复核器。你的任务是结合用户原始意图与非全量检查分支的候选命令，判断它们是否可以自动执行。COMMAND_LIBRARY_JSON
+            只是安全参考，不是唯一合法来源。
+
+            1. 先检查每条命令的 source 字段。source 只能是 library 或 generated。若缺失、拼错或与命令内容明显不符，decision
+            必须是 human_review。
+
+            2. 当 source=library 且命令与命令库中的安全包装命令完全一致时，可视为更高可信度的低风险命令。
+
+            3. 当 source=generated 时，如果命令语义明确、只读、低风险，也可以 auto_execute；但只要存在歧义、副作用风险、参数不明确，或你无法确认其安全性，就必须
+            human_review。
+
+            4. 只要用户原始请求包含高风险意图，任一命令会改系统状态，或 planner 只给出前置检查命令但用户真正要求的是后续高风险动作，也必须
+            human_review。
+
+            5. 不要因为命令不在 COMMAND_LIBRARY_JSON 中就机械判定 human_review；要综合 source 字段和命令语义本身判断。
+
+            6. 不要改写 planner 输出，只做审查。
+
+            7. 只输出 JSON，不要 Markdown，不要解释性前后缀。
+
+            8. 输出字段至少包含 decision、risk_level、summary。'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 100
+        meta:
+          minimum_dify_version: 1.7.0
+          version: 0.0.2
+        output_schema: {}
+        plugin_unique_identifier: langgenius/agent:0.0.37@a5dcc6ea00bca23439b49ff7d65704f3f5dd6ce2ca353205e62278e2148d84b6
+        selected: false
+        title: 不是 命令安全复核
+        tool_node_version: '2'
+        type: agent
+      height: 188
+      id: review_agent
+      position:
+        x: 862.4578129666186
+        y: 481.0789250737208
+      positionAbsolute:
+        x: 862.4578129666186
+        y: 481.0789250737208
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: need_human_review
+          conditions:
+          - comparison_operator: is
+            id: review_need_human
+            value: human_review
+            varType: string
+            variable_selector:
+            - normalize_review_gate
+            - decision
+          id: need_human_review
+          logical_operator: and
+        selected: false
+        title: 复核结果判断
+        type: if-else
+      height: 148
+      id: review_gate_if
+      position:
+        x: 1145.1405142353904
+        y: 120
+      positionAbsolute:
+        x: 1145.1405142353904
+        y: 120
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        classes:
+        - id: direct_answer
+          name: '纯问答 / 纯解释，不依赖当前目标主机的实时信息，也不需要执行命令。
+
+            适用于：命令含义解释、报告怎么看、巡检项说明、方案咨询、流程说明、错误含义解释。
+
+            只要用户是在“问知识、问解释、问方法”，而不是要“看这台机器现在什么情况”，就归到分类1。'
+        - id: execute
+          name: '机器相关检查 / 分析 / 巡检，依赖当前目标主机的实时信息，或需要执行命令后才能回答。
+
+            适用于：全量检查、查看机器信息、分析报错、排查故障、查看服务状态、权限、系统版本、域信息、漏洞、性能、日志等。
+
+            只要用户是在“让你看这台机器当前状态”或“基于这台机器执行结果做判断”，就归到分类2。'
+        instruction: '你是请求路由器。
+
+          你的任务不是判断用户是否在聊 Windows，而是判断回答这个问题是否必须读取目标主机当前实时信息或执行命令。
+
+
+          分类规则只有两类：
+
+          A. 直接回答
+
+          当问题可以通过以下任一方式回答时，进入直接回答分支：
+
+          通用知识
+
+          当前时间工具
+
+
+          B. 巡检执行
+
+          只有当问题必须查看目标主机当前实时状态，或必须执行命令后才能回答时，才进入巡检分支。
+
+          判定原则：
+
+          不要因为问题里出现 Windows、AD、巡检、风险、报告 等词，就直接判定为巡检执行。
+
+          必须确认“如果不访问目标主机当前状态，就无法回答”，才允许进入巡检分支。
+
+          如果问题有歧义，默认进入直接回答分支；必要时在直接回答里先澄清，不要直接发起巡检。
+
+          输出只允许一个分类结果，不要解释。'
+        instructions: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}
+
+
+            {{#sys.files#}}'
+          window:
+            enabled: true
+            size: 100
+        model:
+          completion_params: {}
+          mode: chat
+          name: minimax-m2.7
+          provider: langgenius/minimax/minimax
+        query_variable_selector:
+        - '1779088244107'
+        - sys.query
+        selected: false
+        title: 请求路由
+        type: question-classifier
+        vision:
+          enabled: false
+      height: 170
+      id: route_classifier
+      position:
+        x: 248.12068459036465
+        y: 3.39553783431856
+      positionAbsolute:
+        x: 248.12068459036465
+        y: 3.39553783431856
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    viewport:
+      x: 77.76228001579881
+      y: 305.3036401033618
+      zoom: 0.3226350074309124
+  rag_pipeline_variables: []

@@ -1,0 +1,2608 @@
+app:
+  description: 基于 Windows Local Agent 的巡检问答 Chatflow
+  icon: 🖥️
+  icon_background: '#D8F5E8'
+  icon_type: emoji
+  mode: advanced-chat
+  name: Windows巡检问答
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.6.0
+workflow:
+  conversation_variables:
+  - description: 最近一次巡检结果 JSON
+    id: 1f8a5c2b-6dc9-4414-804c-b1852b645b34
+    name: last_report_context
+    selector:
+    - conversation
+    - last_report_context
+    value: ''
+    value_type: string
+  - description: 最近一次巡检状态
+    id: 17a1dc7c-07b4-43a1-abbf-482d6b988669
+    name: last_inspection_status
+    selector:
+    - conversation
+    - last_inspection_status
+    value: ''
+    value_type: string
+  - description: 最近一次系统说明
+    id: 9514ba06-1083-4a00-b53d-190d0a430021
+    name: last_customer_message
+    selector:
+    - conversation
+    - last_customer_message
+    value: ''
+    value_type: string
+  - description: 最近一次巡检 Agent 地址
+    id: cdf30913-544d-4958-89df-598dcd055c5f
+    name: last_agent_base_url
+    selector:
+    - conversation
+    - last_agent_base_url
+    value: ''
+    value_type: string
+  - description: 最近一次巡检 host
+    id: bdb33f4c-6526-4c66-885b-11ec7c98eee2
+    name: last_host_payload
+    selector:
+    - conversation
+    - last_host_payload
+    value: ''
+    value_type: string
+  - description: 最近一次巡检任务 ID
+    id: 2dbdd049-1068-41d8-ad90-eebf5dc44fe2
+    name: last_task_id
+    selector:
+    - conversation
+    - last_task_id
+    value: ''
+    value_type: string
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        attachment_image_file_size_limit: 2
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        file_upload_limit: 20
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: 巡检助手 现在开始巡检吗？
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - 新的全量巡检
+    - 所有问题分析
+    - 是否需要人工介入
+    suggested_questions_after_answer:
+      enabled: true
+      model:
+        completion_params:
+          echo: false
+          frequency_penalty: 0
+          max_tokens: 0
+          presence_penalty: 0
+          stop: []
+          temperature: 0.7
+          top_p: 0
+        mode: chat
+        name: minimax-m2.7
+        provider: langgenius/minimax/minimax
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        sourceType: assigner
+        targetType: agent
+      id: assign_completed-source-llm-target
+      source: assign_completed
+      sourceHandle: source
+      target: llm
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: assigner
+        targetType: answer
+      id: assign_failed-source-answer_poll_failed-target
+      source: assign_failed
+      sourceHandle: source
+      target: answer_poll_failed
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: assigner
+        targetType: code
+      id: assign_running-source-poll_progress-target
+      source: assign_running
+      sourceHandle: source
+      target: poll_progress
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: assigner
+        targetType: code
+      id: assign_timeout-source-fetch_report-target
+      source: assign_timeout
+      sourceHandle: source
+      target: fetch_report
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: answer
+      id: fetch_if-false-answer_fetch_invalid-target
+      source: fetch_if
+      sourceHandle: 'false'
+      target: answer_fetch_invalid
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: assigner
+      id: fetch_if-true-assign_completed-target
+      source: fetch_if
+      sourceHandle: 'true'
+      target: assign_completed
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: answer
+      id: fetch_report-fail-branch-answer_fetch_exception-target
+      source: fetch_report
+      sourceHandle: fail-branch
+      target: answer_fetch_exception
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: if-else
+      id: fetch_report-source-fetch_if-target
+      source: fetch_report
+      sourceHandle: source
+      target: fetch_if
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: http-request
+        targetType: answer
+      id: health_http-fail-branch-answer_health_exception-target
+      source: health_http
+      sourceHandle: fail-branch
+      target: answer_health_exception
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: http-request
+        targetType: if-else
+      id: health_http-source-health_if-target
+      source: health_http
+      sourceHandle: source
+      target: health_if
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: answer
+      id: health_if-false-answer_health_invalid-target
+      source: health_if
+      sourceHandle: 'false'
+      target: answer_health_invalid
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: code
+      id: health_if-true-trigger_http-target
+      source: health_if
+      sourceHandle: 'true'
+      target: trigger_http
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: agent
+        targetType: answer
+      id: history_agent-source-answer_history-target
+      source: history_agent
+      sourceHandle: source
+      target: answer_history
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: code
+      id: poll_complete_if-done_case-fetch_report-target
+      source: poll_complete_if
+      sourceHandle: done_case
+      target: fetch_report
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: assigner
+      id: poll_complete_if-failed_case-assign_failed-target
+      source: poll_complete_if
+      sourceHandle: failed_case
+      target: assign_failed
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: answer
+      id: poll_complete_if-false-answer_poll_error-target
+      source: poll_complete_if
+      sourceHandle: 'false'
+      target: answer_poll_error
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: assigner
+      id: poll_complete_if-timeout_case-assign_timeout-target
+      source: poll_complete_if
+      sourceHandle: timeout_case
+      target: assign_timeout
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: if-else
+      id: poll_progress-source-poll_complete_if-target
+      source: poll_progress
+      sourceHandle: source
+      target: poll_complete_if
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: answer
+      id: query_route_if-false-answer_general-target
+      source: query_route_if
+      sourceHandle: 'false'
+      target: answer_general
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: agent
+      id: query_route_if-history_case-history_agent-target
+      source: query_route_if
+      sourceHandle: history_case
+      target: history_agent
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: http-request
+      id: query_route_if-run_case-health_http-target
+      source: query_route_if
+      sourceHandle: run_case
+      target: health_http
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: agent
+        targetType: if-else
+      id: query_router-source-query_route_if-target
+      source: query_router
+      sourceHandle: source
+      target: query_route_if
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: answer
+      id: trigger_http-fail-branch-answer_trigger_exception-target
+      source: trigger_http
+      sourceHandle: fail-branch
+      target: answer_trigger_exception
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: if-else
+      id: trigger_http-source-trigger_ok_if-target
+      source: trigger_http
+      sourceHandle: source
+      target: trigger_ok_if
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: answer
+      id: trigger_ok_if-auth_case-answer_auth_fail-target
+      source: trigger_ok_if
+      sourceHandle: auth_case
+      target: answer_auth_fail
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: answer
+      id: trigger_ok_if-false-answer_trigger_business_fail-target
+      source: trigger_ok_if
+      sourceHandle: 'false'
+      target: answer_trigger_business_fail
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: assigner
+      id: trigger_ok_if-run_case-assign_running-target
+      source: trigger_ok_if
+      sourceHandle: run_case
+      target: assign_running
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: code
+      id: fetch_report-source-word_markdown_preprocess-target
+      selected: false
+      source: fetch_report
+      sourceHandle: source
+      target: word_markdown_preprocess
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        sourceType: agent
+        targetType: code
+      id: llm-source-word_markdown_preprocess-target
+      selected: false
+      source: llm
+      sourceHandle: source
+      target: word_markdown_preprocess
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        sourceType: code
+        targetType: tool
+      id: word_markdown_preprocess-source-word_export_docx-target
+      selected: false
+      source: word_markdown_preprocess
+      sourceHandle: source
+      target: word_export_docx
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        sourceType: tool
+        targetType: code
+      id: word_export_docx-source-word_download_link-target
+      selected: false
+      source: word_export_docx
+      sourceHandle: source
+      target: word_download_link
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        sourceType: code
+        targetType: answer
+      id: word_download_link-source-answer-target
+      selected: false
+      source: word_download_link
+      sourceHandle: source
+      target: answer
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        sourceType: start
+        targetType: code
+      id: 1778565795503-source-explicit_run_guard-target
+      source: '1778565795503'
+      sourceHandle: source
+      target: explicit_run_guard
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: if-else
+      id: explicit_run_guard-source-explicit_run_if-target
+      source: explicit_run_guard
+      sourceHandle: source
+      target: explicit_run_if
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: http-request
+      id: explicit_run_if-run_case-health_http-target
+      source: explicit_run_if
+      sourceHandle: run_case
+      target: health_http
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: if-else
+        targetType: agent
+      id: explicit_run_if-false-query_router-target
+      source: explicit_run_if
+      sourceHandle: 'false'
+      target: query_router
+      targetHandle: target
+      type: custom
+    nodes:
+    - data:
+        selected: false
+        title: 用户输入
+        type: start
+        variables:
+        - default: http://192.168.99.188:8031
+          hint: Windows Local Agent 的访问地址
+          label: Agent 地址
+          placeholder: http://192.168.99.188:8031
+          required: true
+          type: text-input
+          variable: agent_base_url
+        - default: 192.168.99.188
+          hint: 必须与目标 Agent 识别的 host 一致
+          label: 目标 host
+          placeholder: 192.168.99.188
+          required: true
+          type: text-input
+          variable: host_payload
+      dragging: false
+      height: 135
+      id: '1778565795503'
+      position:
+        x: 29.730960222697178
+        y: -224.89356836222538
+      positionAbsolute:
+        x: 29.730960222697178
+        y: -224.89356836222538
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#fetch_report.report_markdown#}}
+
+
+          ---
+
+
+          {{#llm.text#}}
+
+
+          ---
+
+
+          Word 版本下载：
+
+          [{{#word_download_link.file_name#}}](http://127.0.0.1{{#word_download_link.download_url#}})'
+        selected: true
+        title: 最终报告
+        type: answer
+        variables:
+        - value_selector:
+          - fetch_report
+          - report_markdown
+          variable: report_markdown
+        - value_selector:
+          - llm
+          - text
+          variable: summary_text
+        - value_selector:
+          - word_download_link
+          - download_markdown
+          variable: download_markdown
+      dragging: false
+      height: 190
+      id: answer
+      position:
+        x: 2830.372794558956
+        y: 790.742932362689
+      positionAbsolute:
+        x: 2830.372794558956
+        y: 790.742932362689
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '触发失败，疑似凭据异常。
+
+          返回: {{#trigger_http.body#}}
+
+          请检查账号、密码和权限。'
+        desc: ''
+        selected: false
+        title: 认证失败
+        type: answer
+        variables: []
+      dragging: false
+      height: 135
+      id: answer_auth_fail
+      position:
+        x: 1902.329140286272
+        y: -123.9646422343592
+      positionAbsolute:
+        x: 1902.329140286272
+        y: -123.9646422343592
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '获取报告接口失败。
+
+          任务ID: {{#poll_progress.task_id#}}
+
+          请检查 fetch-report 接口与 Agent 日志。'
+        desc: ''
+        selected: false
+        title: 取报告异常
+        type: answer
+        variables: []
+      dragging: false
+      height: 135
+      id: answer_fetch_exception
+      position:
+        x: 2061.422263007402
+        y: 292.01943474942243
+      positionAbsolute:
+        x: 2061.422263007402
+        y: 292.01943474942243
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '返回中未找到有效报告。
+
+          状态码: {{#fetch_report.status_code#}}
+
+          返回: {{#fetch_report.body#}}'
+        desc: ''
+        selected: false
+        title: 报告无效
+        type: answer
+        variables: []
+      dragging: false
+      height: 137
+      id: answer_fetch_invalid
+      position:
+        x: 2702.5530047734674
+        y: 223.4893990453067
+      positionAbsolute:
+        x: 2702.5530047734674
+        y: 223.4893990453067
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#query_router.text#}}'
+        selected: false
+        title: 普通问答
+        type: answer
+        variables: []
+      dragging: false
+      height: 103
+      id: answer_general
+      position:
+        x: 610.3145680170988
+        y: 504.25910819704933
+      positionAbsolute:
+        x: 610.3145680170988
+        y: 504.25910819704933
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '无法连接 Windows Local Agent。
+
+          Agent: {{#1778565795503.agent_base_url#}}
+
+          Host: {{#1778565795503.host_payload#}}
+
+          请检查服务、网络和防火墙。'
+        desc: ''
+        selected: false
+        title: 健康异常
+        type: answer
+        variables: []
+      dragging: false
+      height: 169
+      id: answer_health_exception
+      position:
+        x: 869.9745738146125
+        y: 147.1369430602394
+      positionAbsolute:
+        x: 869.9745738146125
+        y: 147.1369430602394
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: 'Agent 健康检查未通过。
+
+          状态码: {{#health_http.status_code#}}
+
+          返回: {{#health_http.body#}}'
+        desc: ''
+        selected: false
+        title: 健康失败
+        type: answer
+        variables: []
+      dragging: false
+      height: 137
+      id: answer_health_invalid
+      position:
+        x: 1135.1572840085494
+        y: 80
+      positionAbsolute:
+        x: 1135.1572840085494
+        y: 80
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#history_agent.text#}}'
+        selected: false
+        title: 历史答复
+        type: answer
+        variables: []
+      dragging: false
+      height: 103
+      id: answer_history
+      position:
+        x: 869.9745738146125
+        y: 338.4874660777324
+      positionAbsolute:
+        x: 869.9745738146125
+        y: 338.4874660777324
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '查询进度失败。
+
+          任务ID: {{#poll_progress.task_id#}}
+
+          说明: {{#poll_progress.poll_message#}}
+
+          轨迹: {{#poll_progress.poll_trace#}}'
+        desc: ''
+        selected: false
+        title: 轮询异常
+        type: answer
+        variables: []
+      dragging: false
+      height: 156
+      id: answer_poll_error
+      position:
+        x: 2075.250884582528
+        y: 682.5848056324548
+      positionAbsolute:
+        x: 2075.250884582528
+        y: 682.5848056324548
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '巡检执行失败。
+
+          任务ID: {{#poll_progress.task_id#}}
+
+          说明: {{#poll_progress.poll_message#}}
+
+          轨迹: {{#poll_progress.poll_trace#}}'
+        desc: ''
+        selected: false
+        title: 执行失败
+        type: answer
+        variables: []
+      dragging: false
+      height: 156
+      id: answer_poll_failed
+      position:
+        x: 2068.9505315515535
+        y: 445.5733210977794
+      positionAbsolute:
+        x: 2068.9505315515535
+        y: 445.5733210977794
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '巡检未被 Agent 接受。
+
+          状态码: {{#trigger_http.status_code#}}
+
+          返回: {{#trigger_http.body#}}'
+        desc: ''
+        selected: false
+        title: 触发失败
+        type: answer
+        variables: []
+      dragging: false
+      height: 137
+      id: answer_trigger_business_fail
+      position:
+        x: 1902.329140286272
+        y: 64.29931230586612
+      positionAbsolute:
+        x: 1902.329140286272
+        y: 64.29931230586612
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '触发巡检请求失败。
+
+          Agent: {{#1778565795503.agent_base_url#}}
+
+          Host: {{#1778565795503.host_payload#}}
+
+          请检查接口可达性。'
+        desc: ''
+        selected: false
+        title: 触发异常
+        type: answer
+        variables: []
+      dragging: false
+      height: 153
+      id: answer_trigger_exception
+      position:
+        x: 1400.3399942024857
+        y: -49.44181839098595
+      positionAbsolute:
+        x: 1400.3399942024857
+        y: -49.44181839098595
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        desc: 写回会话变量
+        items:
+        - input_type: constant
+          operation: set
+          value: completed
+          variable_selector:
+          - conversation
+          - last_inspection_status
+        - input_type: variable
+          operation: over-write
+          value:
+          - poll_progress
+          - task_id
+          variable_selector:
+          - conversation
+          - last_task_id
+        - input_type: variable
+          operation: over-write
+          value:
+          - fetch_report
+          - llm_context
+          variable_selector:
+          - conversation
+          - last_report_context
+        - input_type: variable
+          operation: over-write
+          value:
+          - '1778565795503'
+          - host_payload
+          variable_selector:
+          - conversation
+          - last_host_payload
+        - input_type: variable
+          operation: over-write
+          value:
+          - '1778565795503'
+          - agent_base_url
+          variable_selector:
+          - conversation
+          - last_agent_base_url
+        - input_type: variable
+          operation: over-write
+          value:
+          - sys
+          - query
+          variable_selector:
+          - conversation
+          - last_customer_message
+        selected: false
+        title: 记录巡检完成
+        type: assigner
+        version: '2'
+      height: 242
+      id: assign_completed
+      position:
+        x: 2702.5530047734674
+        y: -128.65901031021633
+      positionAbsolute:
+        x: 2702.5530047734674
+        y: -128.65901031021633
+      selected: false
+      sourcePosition: null
+      targetPosition: null
+      type: custom
+      width: 242
+    - data:
+        desc: 写回会话变量
+        items:
+        - input_type: constant
+          operation: set
+          value: failed
+          variable_selector:
+          - conversation
+          - last_inspection_status
+        - input_type: variable
+          operation: over-write
+          value:
+          - poll_progress
+          - task_id
+          variable_selector:
+          - conversation
+          - last_task_id
+        - input_type: variable
+          operation: over-write
+          value:
+          - '1778565795503'
+          - host_payload
+          variable_selector:
+          - conversation
+          - last_host_payload
+        - input_type: variable
+          operation: over-write
+          value:
+          - '1778565795503'
+          - agent_base_url
+          variable_selector:
+          - conversation
+          - last_agent_base_url
+        - input_type: variable
+          operation: over-write
+          value:
+          - sys
+          - query
+          variable_selector:
+          - conversation
+          - last_customer_message
+        selected: false
+        title: 记录巡检失败
+        type: assigner
+        version: '2'
+      height: 216
+      id: assign_failed
+      position:
+        x: 1683.780920286644
+        y: 453.101589641931
+      positionAbsolute:
+        x: 1683.780920286644
+        y: 453.101589641931
+      selected: false
+      sourcePosition: null
+      targetPosition: null
+      type: custom
+      width: 242
+    - data:
+        desc: 写回会话变量
+        items:
+        - input_type: constant
+          operation: set
+          value: running
+          variable_selector:
+          - conversation
+          - last_inspection_status
+        - input_type: variable
+          operation: over-write
+          value:
+          - trigger_http
+          - task_id
+          variable_selector:
+          - conversation
+          - last_task_id
+        - input_type: variable
+          operation: over-write
+          value:
+          - '1778565795503'
+          - host_payload
+          variable_selector:
+          - conversation
+          - last_host_payload
+        - input_type: variable
+          operation: over-write
+          value:
+          - '1778565795503'
+          - agent_base_url
+          variable_selector:
+          - conversation
+          - last_agent_base_url
+        - input_type: variable
+          operation: over-write
+          value:
+          - sys
+          - query
+          variable_selector:
+          - conversation
+          - last_customer_message
+        selected: false
+        title: 记录巡检进行中
+        type: assigner
+        version: '2'
+      height: 216
+      id: assign_running
+      position:
+        x: 1902.329140286272
+        y: -370.2235115375071
+      positionAbsolute:
+        x: 1902.329140286272
+        y: -370.2235115375071
+      selected: false
+      sourcePosition: null
+      targetPosition: null
+      type: custom
+      width: 242
+    - data:
+        desc: 写回会话变量
+        items:
+        - input_type: constant
+          operation: set
+          value: timeout
+          variable_selector:
+          - conversation
+          - last_inspection_status
+        - input_type: variable
+          operation: over-write
+          value:
+          - poll_progress
+          - task_id
+          variable_selector:
+          - conversation
+          - last_task_id
+        - input_type: variable
+          operation: over-write
+          value:
+          - '1778565795503'
+          - host_payload
+          variable_selector:
+          - conversation
+          - last_host_payload
+        - input_type: variable
+          operation: over-write
+          value:
+          - '1778565795503'
+          - agent_base_url
+          variable_selector:
+          - conversation
+          - last_agent_base_url
+        - input_type: variable
+          operation: over-write
+          value:
+          - sys
+          - query
+          variable_selector:
+          - conversation
+          - last_customer_message
+        selected: false
+        title: 记录巡检超时
+        type: assigner
+        version: '2'
+      height: 216
+      id: assign_timeout
+      position:
+        x: 1252.3264346021995
+        y: 766.9787980906132
+      positionAbsolute:
+        x: 1252.3264346021995
+        y: 766.9787980906132
+      selected: false
+      sourcePosition: null
+      targetPosition: null
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: fetch_has_report
+            value: '"report"'
+            varType: string
+            variable_selector:
+            - fetch_report
+            - body
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 判断报告
+        type: if-else
+      dragging: false
+      height: 148
+      id: fetch_if
+      position:
+        x: 2363.7809202866442
+        y: 108.11672155888027
+      positionAbsolute:
+        x: 2363.7809202866442
+        y: 108.11672155888027
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: '{"host":"{{#1778565795503.host_payload#}}"}'
+          type: json
+        code: "import json\nimport time\nfrom urllib import error, request\n\n\ndef\
+          \ _request_json(method: str, url: str, payload=None, timeout: int = 15):\n\
+          \    data = None\n    headers = {'Content-Type': 'application/json'}\n \
+          \   if payload is not None:\n        data = json.dumps(payload).encode('utf-8')\n\
+          \    req = request.Request(url, data=data, headers=headers, method=method)\n\
+          \    with request.urlopen(req, timeout=timeout) as resp:\n        body =\
+          \ resp.read().decode('utf-8')\n        return resp.status, json.loads(body)\
+          \ if body else {}\n\n\ndef _stringify(value):\n    if value is None:\n \
+          \       return ''\n    if isinstance(value, str):\n        return value.strip()\n\
+          \    if isinstance(value, (int, float, bool)):\n        return str(value)\n\
+          \    return json.dumps(value, ensure_ascii=False)\n\n\ndef _short_text(value,\
+          \ limit=500):\n    text = _stringify(value)\n    if len(text) <= limit:\n\
+          \        return text\n    return text[: limit - 9].rstrip() + ' ...(节选)'\n\
+          \n\ndef _escape_cell(value):\n    return _stringify(value).replace('\\n',\
+          \ '<br>').replace('|', '\\\\|')\n\n\ndef _severity_label(severity):\n  \
+          \  mapping = {'high': '高风险', 'medium': '中风险', 'low': '低风险', 'info': '信息级'}\n\
+          \    key = _stringify(severity).lower()\n    return mapping.get(key, key\
+          \ or '未知')\n\n\ndef _severity_tag(severity):\n    mapping = {\n        'high':\
+          \ '【高风险】',\n        'medium': '【中风险】',\n        'low': '【低风险】',\n      \
+          \  'info': '【信息级】',\n    }\n    key = _stringify(severity).lower()\n   \
+          \ return mapping.get(key, f'【{_severity_label(severity)}】')\n\n\ndef _status_label(status):\n\
+          \    mapping = {\n        'passed': '通过',\n        'succeeded': '成功',\n\
+          \        'completed': '已完成',\n        'failed': '失败',\n        'timeout':\
+          \ '超时',\n        'skipped': '已跳过',\n        'running': '执行中',\n    }\n \
+          \   key = _stringify(status).lower()\n    return mapping.get(key, _stringify(status)\
+          \ or '未知')\n\n\ndef _risk_rows(checks):\n    grouped = {'high': [], 'medium':\
+          \ [], 'low': []}\n    for index, check in enumerate(checks, start=1):\n\
+          \        severity = _stringify(check.get('severity')).lower()\n        if\
+          \ severity in grouped:\n            grouped[severity].append({\n       \
+          \         'index': index,\n                'title': _stringify(check.get('title')\
+          \ or check.get('check_id') or '未命名检查'),\n            })\n    return grouped\n\
+          \n\ndef _index_text(rows):\n    if not rows:\n        return '无'\n    return\
+          \ '第' + '、'.join(str(row['index']) for row in rows) + '条'\n\n\ndef _title_text(rows):\n\
+          \    if not rows:\n        return '无'\n    return '；'.join(row['title']\
+          \ for row in rows)\n\n\n\n\ndef _flatten_command_trace(checks, command_trace):\n\
+          \    if isinstance(command_trace, list) and command_trace:\n        return\
+          \ command_trace\n    rows = []\n    for check in checks:\n        commands\
+          \ = check.get('commands')\n        if not isinstance(commands, list):\n\
+          \            continue\n        results = check.get('command_results')\n\
+          \        result_list = results if isinstance(results, list) else []\n  \
+          \      title = _stringify(check.get('title') or check.get('check_id') or\
+          \ '未命名检查')\n        for index, command in enumerate(commands):\n       \
+          \     text = _stringify(command)\n            if not text:\n           \
+          \     continue\n            result = result_list[index] if index < len(result_list)\
+          \ and isinstance(result_list[index], dict) else {}\n            rows.append({\n\
+          \                'check_title': title,\n                'command': text,\n\
+          \                'execution_status': result.get('execution_status') or result.get('status')\
+          \ or check.get('status'),\n                'exit_code': result.get('exit_code'),\n\
+          \                'stdout_summary': result.get('stdout_summary') or _short_text(result.get('stdout'),\
+          \ 180),\n                'stderr_summary': result.get('stderr_summary')\
+          \ or _short_text(result.get('stderr'), 180),\n            })\n    return\
+          \ rows\n\n\ndef _explain_reproduction_entry(check, command):\n    text =\
+          \ _stringify(command)\n    lower = text.lower()\n    focus = _stringify(check.get('affected_scope')\
+          \ or check.get('title') or check.get('check_id') or '当前检查项')\n    impact\
+          \ = _stringify(check.get('result_summary') or check.get('affected_scope')\
+          \ or '需要结合实际结果评估影响')\n    advice = _stringify(check.get('recommendation')\
+          \ or '请结合事件ID、来源和业务组件定位根因后处理')\n    if 'get-winevent' in lower and \"logname='system'\"\
+          \ in lower and 'level=1,2,3' in lower:\n        focus = '检查最近24小时系统日志中的严重、错误和警告事件，定位驱动、服务、磁盘、网络和启动相关异常。'\n\
+          \        impact = impact or '这类事件持续出现通常意味着底层系统稳定性下降，可能导致服务不可用、性能波动或故障扩散。'\n\
+          \        advice = advice or '建议按事件ID和来源聚类排查，优先处理重复出现的磁盘、驱动、服务启动失败和网络异常。'\n\
+          \    elif 'get-winevent' in lower and \"logname='application'\" in lower\
+          \ and 'level=1,2,3' in lower:\n        focus = '检查最近24小时应用程序日志中的严重、错误和警告事件，定位业务程序崩溃、依赖失败和组件报错。'\n\
+          \        impact = impact or '应用层事件持续出现通常会直接影响业务可用性、数据处理稳定性和用户访问体验。'\n  \
+          \      advice = advice or '建议按应用名称、事件来源和事件ID定位异常模块，结合应用日志、补丁和依赖组件版本处理。'\n\
+          \    elif 'get-ciminstance' in lower and 'win32_operatingsystem' in lower:\n\
+          \        focus = '检查操作系统最近启动时间和连续运行时长，用于识别异常重启或长期未重启。'\n        impact =\
+          \ impact or '运行时长异常过长可能意味着补丁和配置长期未通过重启生效，异常过短则需排查频繁重启和稳定性问题。'\n        advice\
+          \ = advice or '建议结合补丁窗口、变更记录和系统日志判断是否需要计划性重启，并核对近期重启原因。'\n    elif 'get-winevent'\
+          \ in lower and \"logname='system'\" in lower and 'level=2' in lower:\n \
+          \       focus = '检查最近24小时系统错误事件，聚焦已经发生的系统级失败。'\n        impact = impact\
+          \ or '系统错误事件说明底层组件已经出现明确失败，若重复出现可能引发服务中断、性能下降或硬件故障扩大。'\n        advice =\
+          \ advice or '建议优先查看高频事件ID，对应排查服务、驱动、磁盘、网络和计划任务失败原因。'\n    elif 'get-winevent'\
+          \ in lower and \"logname='application'\" in lower and 'level=2' in lower:\n\
+          \        focus = '检查最近24小时应用错误事件，聚焦已经发生的程序级失败。'\n        impact = impact\
+          \ or '应用错误事件通常意味着业务程序已发生异常退出、依赖加载失败或运行时错误，可能直接影响业务处理。'\n        advice =\
+          \ advice or '建议结合应用日志、Windows 事件来源、运行账户权限和依赖组件状态排查根因。'\n    return {'focus':\
+          \ focus, 'impact': impact, 'advice': advice}\n\n\ndef _build_report_markdown(payload,\
+          \ task_id_fallback):\n    report = payload.get('report') if isinstance(payload,\
+          \ dict) else None\n    if not isinstance(report, dict):\n        report\
+          \ = payload if isinstance(payload, dict) else {}\n\n    summary = report.get('summary')\
+          \ if isinstance(report.get('summary'), dict) else {}\n    generated_at =\
+          \ report.get('generated_at') or payload.get('generated_at') or ''\n    agent_name\
+          \ = report.get('agent_name') or payload.get('agent_name') or ''\n    overview_chart_url\
+          \ = report.get('overview_chart_url') or payload.get('overview_chart_url')\
+          \ or ''\n    task_id = payload.get('task_id') or report.get('task_id') or\
+          \ task_id_fallback or ''\n    checks = report.get('checks') if isinstance(report.get('checks'),\
+          \ list) else []\n    command_trace = _flatten_command_trace(checks, report.get('command_trace'))\n\
+          \    contract_validation = payload.get('contract_validation') if isinstance(payload.get('contract_validation'),\
+          \ dict) else {}\n    missing_fields = contract_validation.get('missing_fields')\
+          \ if isinstance(contract_validation.get('missing_fields'), list) else []\n\
+          \    risk_rows = _risk_rows(checks)\n    overall_status = payload.get('status')\
+          \ or report.get('status') or 'completed'\n    ad_data_status = '已提供' if\
+          \ bool(summary.get('has_active_directory_data')) else '未提供'\n    identity_notice\
+          \ = '当前 fetch-report 未提供域控身份、域成员关系和当前账户权限清单，无法准确说明是否为域控及当前账户具备/缺失的权限。'\n\
+          \n    lines = [\n        '# Windows 主机巡检报告',\n        '',\n        '> 文档类型：客户交付版',\n\
+          \        f'> 巡检目标：{_stringify(agent_name) or \"未提供\"}',\n        f'> 任务编号：{_stringify(task_id)\
+          \ or \"未提供\"}',\n        f'> 生成时间：{_stringify(generated_at) or \"未提供\"}',\n\
+          \        f'> 巡检状态：{_status_label(overall_status)}',\n        f'> AD 专项数据：{ad_data_status}',\n\
+          \        f'> 身份与权限说明：{identity_notice}',\n    ]\n\n    if missing_fields:\n\
+          \        lines.extend([\n            '',\n            '---',\n         \
+          \   '',\n            '## 附注：数据缺口说明',\n            *(f'- {item}' for item\
+          \ in missing_fields),\n        ])\n\n    lines.extend([\n        '',\n \
+          \       '---',\n        '',\n        '## 一、执行概览',\n        '',\n       \
+          \ '| 指标 | 数值 |',\n        '|------|------|',\n        f'| 检查项总数 | {_escape_cell(summary.get(\"\
+          check_count\", 0))} |',\n        f'| 执行命令总数 | {_escape_cell(summary.get(\"\
+          command_count\", 0))} |',\n        f'| 高风险数量 | {_escape_cell(summary.get(\"\
+          high_risk_count\", 0))} |',\n        f'| 中风险数量 | {_escape_cell(summary.get(\"\
+          medium_risk_count\", 0))} |',\n        f'| 低风险数量 | {_escape_cell(summary.get(\"\
+          low_risk_count\", 0))} |',\n        f'| 信息级数量 | {_escape_cell(summary.get(\"\
+          info_count\", 0))} |',\n    ])\n    if overview_chart_url:\n        lines.extend([\n\
+          \            '',\n            '### 概况图',\n            f'![巡检概况图]({overview_chart_url})',\n\
+          \        ])\n\n    lines.extend([\n        '',\n        '---',\n       \
+          \ '',\n        '## 二、风险总览',\n        '',\n        '| 风险等级 | 数量 | 对应条目 |',\n\
+          \        '|------|------|------|',\n        f'| {_escape_cell(_severity_tag(\"\
+          high\"))} | {_escape_cell(summary.get(\"high_risk_count\", 0))} | {_escape_cell(_index_text(risk_rows[\"\
+          high\"]))} |',\n        f'| {_escape_cell(_severity_tag(\"medium\"))} |\
+          \ {_escape_cell(summary.get(\"medium_risk_count\", 0))} | {_escape_cell(_index_text(risk_rows[\"\
+          medium\"]))} |',\n        f'| {_escape_cell(_severity_tag(\"low\"))} | {_escape_cell(summary.get(\"\
+          low_risk_count\", 0))} | {_escape_cell(_index_text(risk_rows[\"low\"]))}\
+          \ |',\n        f'| {_escape_cell(_severity_tag(\"info\"))} | {_escape_cell(summary.get(\"\
+          info_count\", 0))} | 不适用 |',\n        '',\n        '## 三、检查明细',\n    ])\n\
+          \n    if not checks:\n        lines.extend(['', '- 无可用检查明细。'])\n    else:\n\
+          \        for index, check in enumerate(checks, start=1):\n            lines.extend([\n\
+          \                '',\n                f'### 3.{index} {_stringify(check.get(\"\
+          title\") or check.get(\"check_id\") or \"未命名检查\")}',\n                f'-\
+          \ 检查类别：{_stringify(check.get(\"category\")) or \"未提供\"}',\n            \
+          \    f'- 风险等级：{_severity_tag(check.get(\"severity\"))}',\n             \
+          \   f'- 执行状态：{_status_label(check.get(\"status\"))}',\n                f'-\
+          \ 结果摘要：{_stringify(check.get(\"result_summary\")) or \"无\"}',\n        \
+          \        f'- 受影响范围：{_stringify(check.get(\"affected_scope\")) or \"无\"}',\n\
+          \                f'- 证据摘要：{_short_text(check.get(\"evidence\"), 520) or\
+          \ \"无\"}',\n                f'- 处置建议：{_stringify(check.get(\"recommendation\"\
+          )) or \"无\"}',\n            ])\n\n    lines.extend([\n        '',\n    \
+          \    '---',\n        '',\n        '## 四、命令追踪',\n        '',\n        '|\
+          \ 序号 | 检查项 | 命令 | 状态 | 退出码 | stdout 摘要 | stderr 摘要 |',\n        '|------|------|------|------|------|------|------|',\n\
+          \    ])\n    if command_trace:\n        for idx, item in enumerate(command_trace,\
+          \ start=1):\n            lines.append('| {idx} | {check_title} | {command}\
+          \ | {status} | {exit_code} | {stdout} | {stderr} |'.format(\n          \
+          \      idx=idx,\n                check_title=_escape_cell(item.get('check_title')),\n\
+          \                command=_escape_cell(item.get('command')),\n          \
+          \      status=_escape_cell(_status_label(item.get('execution_status') or\
+          \ item.get('status'))),\n                exit_code=_escape_cell(item.get('exit_code')),\n\
+          \                stdout=_escape_cell(item.get('stdout_summary')),\n    \
+          \            stderr=_escape_cell(item.get('stderr_summary')),\n        \
+          \    ))\n    else:\n        lines.append('| - | 当前报告未提供命令级执行结果 | - | - |\
+          \ - | - | - |')\n\n    lines.extend([\n        '',\n        '---',\n   \
+          \     '',\n        '## 五、中高风险复现命令',\n        '',\n    ])\n    reproduction_lines\
+          \ = []\n    reproduction_index = 1\n    for check in checks:\n        severity\
+          \ = _stringify(check.get('severity')).lower()\n        if severity not in\
+          \ {'high', 'medium'}:\n            continue\n        commands = check.get('manual_reproduction_commands')\n\
+          \        if not isinstance(commands, list):\n            continue\n    \
+          \    for command in commands:\n            text = _stringify(command)\n\
+          \            if text:\n                reproduction_lines.append(\n    \
+          \                f'{reproduction_index}. {_severity_tag(severity)} {_stringify(check.get(\"\
+          title\") or check.get(\"check_id\") or \"未命名检查\")}：{text}'\n           \
+          \     )\n                reproduction_index += 1\n    if reproduction_lines:\n\
+          \        lines.extend(reproduction_lines)\n    else:\n        lines.append('-\
+          \ 无')\n\n    lines.extend([\n        '',\n        '---',\n        '',\n\
+          \        '## 六、复现命令解释',\n        '',\n    ])\n    explanation_lines = []\n\
+          \    explanation_index = 1\n    for check in checks:\n        severity =\
+          \ _stringify(check.get('severity')).lower()\n        if severity not in\
+          \ {'high', 'medium'}:\n            continue\n        commands = check.get('manual_reproduction_commands')\n\
+          \        if not isinstance(commands, list):\n            continue\n    \
+          \    for command in commands:\n            text = _stringify(command)\n\
+          \            if not text:\n                continue\n            explanation\
+          \ = _explain_reproduction_entry(check, text)\n            explanation_lines.extend([\n\
+          \                f'{explanation_index}. {_severity_tag(severity)} {_stringify(check.get(\"\
+          title\") or check.get(\"check_id\") or \"未命名检查\")}',\n                f'\
+          \   - 复现命令：{text}',\n                f'   - 检查内容：{explanation[\"focus\"\
+          ]}',\n                f'   - 影响说明：{explanation[\"impact\"]}',\n        \
+          \        f'   - 处置建议：{explanation[\"advice\"]}',\n            ])\n     \
+          \       explanation_index += 1\n    if explanation_lines:\n        lines.extend(explanation_lines)\n\
+          \    else:\n        lines.append('- 无')\n\n    lines.extend([\n        '',\n\
+          \        '---',\n        '',\n        '## 七、风险条目索引',\n        '',\n    \
+          \    '| 风险等级 | 对应第几条 | 条目名称 |',\n        '|------|------|------|',\n   \
+          \ ])\n    for severity in ('high', 'medium', 'low'):\n        rows = risk_rows[severity]\n\
+          \        lines.append('| {label} | {indexes} | {titles} |'.format(\n   \
+          \         label=_escape_cell(_severity_tag(severity)),\n            indexes=_escape_cell(_index_text(rows)),\n\
+          \            titles=_escape_cell(_title_text(rows)),\n        ))\n\n   \
+          \ return '\\n'.join(lines)\n\n\ndef _build_llm_context(payload, task_id_fallback):\n\
+          \    report = payload.get('report') if isinstance(payload, dict) else None\n\
+          \    if not isinstance(report, dict):\n        report = payload if isinstance(payload,\
+          \ dict) else {}\n    summary = report.get('summary') if isinstance(report.get('summary'),\
+          \ dict) else {}\n    task_id = payload.get('task_id') or report.get('task_id')\
+          \ or task_id_fallback or ''\n    checks = report.get('checks') if isinstance(report.get('checks'),\
+          \ list) else []\n    risks = []\n    reproduction = []\n    for check in\
+          \ checks:\n        severity = _stringify(check.get('severity')).lower()\n\
+          \        if severity not in {'high', 'medium'}:\n            continue\n\
+          \        risks.append({\n            'title': check.get('title') or check.get('check_id'),\n\
+          \            'severity': severity,\n            'status': check.get('status'),\n\
+          \            'result_summary': check.get('result_summary'),\n          \
+          \  'recommendation': check.get('recommendation'),\n            'affected_scope':\
+          \ check.get('affected_scope'),\n        })\n        commands = check.get('manual_reproduction_commands')\n\
+          \        if isinstance(commands, list):\n            for command in commands:\n\
+          \                text = _stringify(command)\n                if text:\n\
+          \                    reproduction.append({\n                        'title':\
+          \ check.get('title') or check.get('check_id'),\n                       \
+          \ 'severity': severity,\n                        'command': text,\n    \
+          \                })\n    context = {\n        'generated_at': report.get('generated_at')\
+          \ or payload.get('generated_at'),\n        'agent_name': report.get('agent_name')\
+          \ or payload.get('agent_name'),\n        'task_id': task_id,\n        'summary':\
+          \ summary,\n        'issues': report.get('issues') or payload.get('issues')\
+          \ or [],\n        'warnings': report.get('warnings') or payload.get('warnings')\
+          \ or [],\n        'high_medium_risks': risks,\n        'manual_reproduction_commands':\
+          \ reproduction,\n    }\n    return json.dumps(context, ensure_ascii=False,\
+          \ separators=(',', ':'))\n\n\ndef main(agent_base_url: str, host_payload:\
+          \ str):\n    base_url = (agent_base_url or '').strip().rstrip('/')\n   \
+          \ host_payload = (host_payload or '').strip()\n    for attempt in range(3):\n\
+          \        try:\n            status, payload = _request_json('POST', f'{base_url}/api/v1/fetch-report',\
+          \ {'host': host_payload}, timeout=20)\n            body = json.dumps(payload,\
+          \ ensure_ascii=False, separators=(',', ':'))\n            task_id = ''\n\
+          \            if isinstance(payload, dict):\n                task_id = str(payload.get('task_id')\
+          \ or (payload.get('report') or {}).get('task_id') or '')\n            return\
+          \ {\n                'status_code': status,\n                'body': body,\n\
+          \                'report_markdown': _build_report_markdown(payload, task_id),\n\
+          \                'llm_context': _build_llm_context(payload, task_id),\n\
+          \            }\n        except error.HTTPError as exc:\n            detail\
+          \ = exc.read().decode('utf-8', errors='ignore')\n            if exc.code\
+          \ == 409 and attempt < 2:\n                time.sleep(3)\n             \
+          \   continue\n            return {'status_code': exc.code, 'body': detail\
+          \ or '', 'report_markdown': '', 'llm_context': ''}\n        except Exception\
+          \ as exc:\n            raise Exception(f'Fetch report failed: {exc}')\n\
+          \    return {'status_code': 409, 'body': '', 'report_markdown': '', 'llm_context':\
+          \ ''}\n"
+        code_language: python3
+        desc: ''
+        error_strategy: fail-branch
+        headers: Content-Type:application/json
+        method: post
+        outputs:
+          body:
+            children: null
+            type: string
+          llm_context:
+            children: null
+            type: string
+          report_markdown:
+            children: null
+            type: string
+          status_code:
+            children: null
+            type: number
+        params: ''
+        retry_config:
+          max_retries: 2
+          retry_enabled: true
+          retry_interval: 1000
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 20000
+          max_read_timeout: 20000
+          max_write_timeout: 20000
+        title: 获取报告
+        type: code
+        url: '{{#1778565795503.agent_base_url#}}/api/v1/fetch-report'
+        variables:
+        - value_selector:
+          - '1778565795503'
+          - agent_base_url
+          variable: agent_base_url
+        - value_selector:
+          - '1778565795503'
+          - host_payload
+          variable: host_payload
+      dragging: false
+      height: 117
+      id: fetch_report
+      position:
+        x: 1673.7164329835934
+        y: 281.274244461331
+      positionAbsolute:
+        x: 1673.7164329835934
+        y: 281.274244461331
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: []
+          type: none
+        desc: ''
+        error_strategy: fail-branch
+        headers: 'Cache-Control:no-cache
+
+          Pragma:no-cache'
+        method: get
+        params: ''
+        retry_config:
+          max_retries: 1
+          retry_enabled: true
+          retry_interval: 1000
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 8000
+          max_read_timeout: 8000
+          max_write_timeout: 8000
+        title: 检查健康
+        type: http-request
+        url: '{{#1778565795503.agent_base_url#}}/health?workflow_run={{#sys.workflow_run_id#}}'
+        variables: []
+      dragging: false
+      height: 195
+      id: health_http
+      position:
+        x: 600.0455282397958
+        y: 80
+      positionAbsolute:
+        x: 600.0455282397958
+        y: 80
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: health_ok
+            value: '"status":"ok"'
+            varType: string
+            variable_selector:
+            - health_http
+            - body
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 判断健康
+        type: if-else
+      dragging: false
+      height: 148
+      id: health_if
+      position:
+        x: 862.2942270687886
+        y: -31.248818275943705
+      positionAbsolute:
+        x: 862.2942270687886
+        y: -31.248818275943705
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        agent_parameters:
+          instruction:
+            type: constant
+            value: '你是历史巡检答复助手。当前用户问题：
+
+              {{#sys.query#}}
+
+
+              最近巡检状态：{{#conversation.last_inspection_status#}}
+
+              最近任务ID：{{#conversation.last_task_id#}}
+
+              最近巡检主机：{{#conversation.last_host_payload#}}
+
+              最近巡检 Agent：{{#conversation.last_agent_base_url#}}
+
+              最近保存的巡检上下文(JSON)：{{#conversation.last_report_context#}}
+
+
+              答复规则：
+
+              1. 只能基于以上上下文回答，禁止臆测。
+
+              2. 如果 `last_report_context` 为空且 `last_inspection_status` 也为空，明确说明当前没有历史巡检信息或任务信息；如需基于服务器状态回答，请先执行巡检。
+
+              3. 如果 `last_report_context` 为空但 `last_inspection_status` 不为空，明确说明当前只有最近任务状态，没有可用报告；指出最近任务状态和任务ID。
+
+              4. 如果 `last_report_context` 不为空且 `last_inspection_status` 不是 completed，先明确说明“当前最新巡检任务尚未产出新的完整报告，以下回答基于最近一次已保存报告”；并在能识别到生成时间时说明生成时间。
+
+              5. 如果 `last_report_context` 不为空且 `last_inspection_status` 为 completed，先明确说明“以下回答基于最近一次巡检报告”，并指出报告时间。
+
+              6. 然后围绕用户当前新问题直接作答，不要把旧问题原样重复。
+
+              7. 如果用户在问风险等级含义、为什么是高风险/低风险、风险原因、风险判定依据，即使没有点名具体检查项，也必须先直接解释，不要先反问用户补充问题。
+
+              8. 对第 7 类问题，优先给出两部分内容：先解释通用判定原则，再结合当前报告中可识别的风险项或风险汇总说明本次高风险/低风险的大致成因；如果上下文里没有足够字段，再明确说明缺少哪部分依据。
+
+              9. 只有当用户问题明显超出巡检上下文或与该服务器无关时，才明确说明这不是当前服务器巡检上下文问题，建议走普通问答。
+
+              10. 全部使用中文，简洁专业，不要输出 JSON，不要调用工具。'
+          maximum_iterations:
+            type: constant
+            value: 1
+          model:
+            type: constant
+            value:
+              completion_params:
+                max_tokens: 1200
+                temperature: 0.1
+              mode: chat
+              model: minimax-m2.7
+              model_type: llm
+              provider: langgenius/minimax/minimax
+          query:
+            type: constant
+            value: 请严格基于历史巡检上下文直接回答当前问题；遇到风险等级含义或原因类问题，优先给出直接解释，不要先反问用户。
+          tools:
+            type: constant
+            value:
+            - enabled: true
+              extra:
+                description: 一个用于获取当前时间的工具。
+              parameters: {}
+              provider_name: time
+              provider_show_name: time
+              schemas:
+              - default: '%Y-%m-%d %H:%M:%S'
+                form: form
+                label: Format
+                name: format
+                options: []
+                required: false
+                type: string
+              - default: UTC
+                form: form
+                label: Timezone
+                name: timezone
+                options:
+                - label: UTC
+                  value: UTC
+                required: false
+                type: select
+              settings:
+                format:
+                  value:
+                    type: constant
+                    value: '%Y-%m-%d %H:%M:%S'
+                timezone:
+                  value:
+                    type: constant
+                    value: UTC
+              tool_description: 一个用于获取当前时间的工具。
+              tool_label: 获取当前时间
+              tool_name: current_time
+              type: builtin
+        agent_strategy_label: ReAct
+        agent_strategy_name: ReAct
+        agent_strategy_provider_name: langgenius/agent/agent
+        desc: 基于最近一次巡检上下文回答
+        isInIteration: null
+        isInLoop: null
+        iteration_id: null
+        loop_id: null
+        memory:
+          query_prompt_template: '你是历史巡检答复助手。当前用户问题：
+
+            {{#sys.query#}}
+
+
+            最近巡检状态：{{#conversation.last_inspection_status#}}
+
+            最近任务ID：{{#conversation.last_task_id#}}
+
+            最近巡检主机：{{#conversation.last_host_payload#}}
+
+            最近巡检 Agent：{{#conversation.last_agent_base_url#}}
+
+            最近保存的巡检上下文(JSON)：{{#conversation.last_report_context#}}
+
+
+            答复规则：
+
+            1. 只能基于以上上下文回答，禁止臆测。
+
+            2. 如果 `last_report_context` 为空且 `last_inspection_status` 也为空，明确说明当前没有历史巡检信息或任务信息；如需基于服务器状态回答，请先执行巡检。
+
+            3. 如果 `last_report_context` 为空但 `last_inspection_status` 不为空，明确说明当前只有最近任务状态，没有可用报告；指出最近任务状态和任务ID。
+
+            4. 如果 `last_report_context` 不为空且 `last_inspection_status` 不是 completed，先明确说明“当前最新巡检任务尚未产出新的完整报告，以下回答基于最近一次已保存报告”；并在能识别到生成时间时说明生成时间。
+
+            5. 如果 `last_report_context` 不为空且 `last_inspection_status` 为 completed，先明确说明“以下回答基于最近一次巡检报告”，并指出报告时间。
+
+            6. 然后围绕用户当前新问题直接作答，不要把旧问题原样重复。
+
+            7. 如果用户在问风险等级含义、为什么是高风险/低风险、风险原因、风险判定依据，即使没有点名具体检查项，也必须先直接解释，不要先反问用户补充问题。
+
+            8. 对第 7 类问题，优先给出两部分内容：先解释通用判定原则，再结合当前报告中可识别的风险项或风险汇总说明本次高风险/低风险的大致成因；如果上下文里没有足够字段，再明确说明缺少哪部分依据。
+
+            9. 只有当用户问题明显超出巡检上下文或与该服务器无关时，才明确说明这不是当前服务器巡检上下文问题，建议走普通问答。
+
+            10. 全部使用中文，简洁专业，不要输出 JSON，不要调用工具。'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 20
+        meta:
+          minimum_dify_version: 1.7.0
+          version: 0.0.2
+        output_schema: {}
+        plugin_unique_identifier: langgenius/agent:0.0.37@a5dcc6ea00bca23439b49ff7d65704f3f5dd6ce2ca353205e62278e2148d84b6
+        selected: false
+        title: 历史巡检答复
+        tool_node_version: '2'
+        type: agent
+      height: 216
+      id: history_agent
+      position:
+        x: 610.3145680170988
+        y: 281.274244461331
+      positionAbsolute:
+        x: 610.3145680170988
+        y: 281.274244461331
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        agent_parameters:
+          instruction:
+            type: constant
+            value: '你是 Windows 巡检交付助手。你只能基于下面给出的紧凑 JSON 输出最终结论，并且必须严格遵守以下格式，不得偏离：
+
+
+              ## 七、结论摘要
+
+              1. ...
+
+
+              ## 八、优化建议
+
+              1. ...
+
+
+              要求：
+
+              1. 全部使用中文，采用正式商务书面语。
+
+              2. 每个章节输出 3 到 5 条编号要点。
+
+              3. 不要重复前文已经列出的表格、命令追踪和复现命令。
+
+              4. 不要输出“### 总结”“### 优化建议”或任何其他标题。
+
+              5. 不要调用工具。
+
+              6. 紧凑 JSON：
+
+              {{#fetch_report.llm_context#}}'
+          maximum_iterations:
+            type: constant
+            value: 1
+          model:
+            type: constant
+            value:
+              completion_params:
+                max_tokens: 1200
+                temperature: 0.1
+              mode: chat
+              model: minimax-m2.7
+              model_type: llm
+              provider: langgenius/minimax/minimax
+          query:
+            type: constant
+            value: 请严格按指定章节标题输出结论摘要与优化建议，不要输出其他标题。
+          tools:
+            type: constant
+            value:
+            - enabled: true
+              extra:
+                description: 一个用于获取当前时间的工具。
+              parameters: {}
+              provider_name: time
+              provider_show_name: time
+              schemas:
+              - default: '%Y-%m-%d %H:%M:%S'
+                form: form
+                label: Format
+                name: format
+                options: []
+                required: false
+                type: string
+              - default: UTC
+                form: form
+                label: Timezone
+                name: timezone
+                options:
+                - label: UTC
+                  value: UTC
+                required: false
+                type: select
+              settings:
+                format:
+                  value:
+                    type: constant
+                    value: '%Y-%m-%d %H:%M:%S'
+                timezone:
+                  value:
+                    type: constant
+                    value: UTC
+              tool_description: 一个用于获取当前时间的工具。
+              tool_label: 获取当前时间
+              tool_name: current_time
+              type: builtin
+        agent_strategy_label: ReAct
+        agent_strategy_name: ReAct
+        agent_strategy_provider_name: langgenius/agent/agent
+        desc: ''
+        memory:
+          query_prompt_template: '你是 Windows 巡检交付助手。你只能基于下面给出的紧凑 JSON 输出最终结论，并且必须严格遵守以下格式，不得偏离：
+
+
+            ## 七、结论摘要
+
+            1. ...
+
+
+            ## 八、优化建议
+
+            1. ...
+
+
+            要求：
+
+            1. 全部使用中文，采用正式商务书面语。
+
+            2. 每个章节输出 3 到 5 条编号要点。
+
+            3. 不要重复前文已经列出的表格、命令追踪和复现命令。
+
+            4. 不要输出“### 总结”“### 优化建议”或任何其他标题。
+
+            5. 不要调用工具。
+
+            6. 紧凑 JSON：
+
+            {{#fetch_report.llm_context#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 20
+        output_schema:
+          properties:
+            files:
+              description: Generated files
+              items:
+                type: object
+              type: array
+            json:
+              description: Agent reasoning trace
+              items:
+                type: object
+              type: array
+            text:
+              description: Agent text output
+              type: string
+            usage:
+              description: Model usage
+              type: object
+        plugin_unique_identifier: langgenius/agent:0.0.37@a5dcc6ea00bca23439b49ff7d65704f3f5dd6ce2ca353205e62278e2148d84b6
+        selected: false
+        title: 生成结论摘要
+        tool_node_version: '2'
+        type: agent
+      dragging: false
+      height: 188
+      id: llm
+      position:
+        x: 3017.431980382113
+        y: -114.86814217683805
+      positionAbsolute:
+        x: 3017.431980382113
+        y: -114.86814217683805
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: done_case
+          conditions:
+          - comparison_operator: is
+            id: poll_done
+            value: completed
+            varType: string
+            variable_selector:
+            - poll_progress
+            - poll_status
+          logical_operator: and
+        - case_id: failed_case
+          conditions:
+          - comparison_operator: is
+            id: poll_failed
+            value: failed
+            varType: string
+            variable_selector:
+            - poll_progress
+            - poll_status
+          logical_operator: and
+        - case_id: timeout_case
+          conditions:
+          - comparison_operator: is
+            id: poll_timeout
+            value: timeout
+            varType: string
+            variable_selector:
+            - poll_progress
+            - poll_status
+          logical_operator: and
+        desc: 完成 / 失败 / 超时 / 其他异常
+        selected: false
+        title: 判断轮询状态
+        type: if-else
+      dragging: false
+      height: 320
+      id: poll_complete_if
+      position:
+        x: 1252.3264346021995
+        y: 345.92947286305264
+      positionAbsolute:
+        x: 1252.3264346021995
+        y: 345.92947286305264
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "import json\nimport time\nfrom urllib import error, request\n\nPOLL_INTERVAL_SECONDS\
+          \ = 0.5\nPOLL_WINDOW_SECONDS = 14.0\nMAX_REQUEST_TIMEOUT_SECONDS = 2.0\n\
+          \n\ndef _request_json(method: str, url: str, payload=None, timeout: float\
+          \ = MAX_REQUEST_TIMEOUT_SECONDS):\n    data = None\n    headers = {'Content-Type':\
+          \ 'application/json'}\n    if payload is not None:\n        data = json.dumps(payload).encode('utf-8')\n\
+          \    req = request.Request(url, data=data, headers=headers, method=method)\n\
+          \    with request.urlopen(req, timeout=timeout) as resp:\n        body =\
+          \ resp.read().decode('utf-8')\n        return resp.status, json.loads(body)\
+          \ if body else {}\n\n\ndef main(agent_base_url: str, host_payload: str,\
+          \ trigger_body: str):\n    base_url = (agent_base_url or '').strip().rstrip('/')\n\
+          \    host_payload = (host_payload or '').strip()\n    task_id = ''\n   \
+          \ try:\n        trigger_json = json.loads(trigger_body or '{}')\n      \
+          \  if isinstance(trigger_json, dict):\n            task_id = str(trigger_json.get('task_id')\
+          \ or '')\n    except Exception:\n        task_id = ''\n\n    if not base_url\
+          \ or not host_payload:\n        return {\n            'poll_status': 'progress_failed',\n\
+          \            'poll_message': '轮询前缺少 Agent 地址或目标 host。',\n            'poll_trace':\
+          \ '[]',\n            'task_id': task_id,\n        }\n\n    deadline = time.monotonic()\
+          \ + POLL_WINDOW_SECONDS\n    trace = []\n\n    while True:\n        remaining\
+          \ = deadline - time.monotonic()\n        if remaining <= 0:\n          \
+          \  break\n\n        request_timeout = min(MAX_REQUEST_TIMEOUT_SECONDS, max(0.5,\
+          \ remaining))\n\n        try:\n            _, progress = _request_json(\n\
+          \                'POST',\n                f'{base_url}/api/v1/check-progress',\n\
+          \                {'host': host_payload},\n                timeout=request_timeout,\n\
+          \            )\n        except error.HTTPError as exc:\n            detail\
+          \ = exc.read().decode('utf-8', errors='ignore')\n            trace.append({'status':\
+          \ 'progress_http_error', 'detail': detail, 'status_code': exc.code})\n \
+          \           return {\n                'poll_status': 'progress_http_error',\n\
+          \                'poll_message': '巡检任务已触发，但查询进度接口返回错误。',\n             \
+          \   'poll_trace': json.dumps(trace, ensure_ascii=False),\n             \
+          \   'task_id': task_id,\n            }\n        except Exception as exc:\n\
+          \            trace.append({'status': 'progress_failed', 'detail': str(exc)})\n\
+          \            return {\n                'poll_status': 'progress_failed',\n\
+          \                'poll_message': '巡检任务已触发，但查询进度失败。',\n                'poll_trace':\
+          \ json.dumps(trace, ensure_ascii=False),\n                'task_id': task_id,\n\
+          \            }\n\n        trace.append({\n            'status': progress.get('status'),\n\
+          \            'progress': progress.get('progress'),\n            'current_step':\
+          \ progress.get('current_step'),\n            'message': progress.get('message'),\n\
+          \            'report_available': progress.get('report_available'),\n   \
+          \     })\n\n        if progress.get('task_id'):\n            task_id = str(progress.get('task_id'))\n\
+          \n        if progress.get('status') == 'completed' or progress.get('report_available')\
+          \ is True:\n            return {\n                'poll_status': 'completed',\n\
+          \                'poll_message': '巡检进度已完成，可以获取报告。',\n                'poll_trace':\
+          \ json.dumps(trace, ensure_ascii=False),\n                'task_id': task_id,\n\
+          \            }\n\n        if progress.get('status') == 'failed':\n     \
+          \       return {\n                'poll_status': 'failed',\n           \
+          \     'poll_message': progress.get('message') or '巡检执行失败，请人工检查目标机器。',\n\
+          \                'poll_trace': json.dumps(trace, ensure_ascii=False),\n\
+          \                'task_id': task_id,\n            }\n\n        remaining\
+          \ = deadline - time.monotonic()\n        if remaining <= 0:\n          \
+          \  break\n\n        time.sleep(min(POLL_INTERVAL_SECONDS, remaining))\n\n\
+          \    return {\n        'poll_status': 'timeout',\n        'poll_message':\
+          \ '巡检任务已触发，但在当前轮询窗口内尚未完成，请稍后重试。',\n        'poll_trace': json.dumps(trace,\
+          \ ensure_ascii=False),\n        'task_id': task_id,\n    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          poll_message:
+            children: null
+            type: string
+          poll_status:
+            children: null
+            type: string
+          poll_trace:
+            children: null
+            type: string
+          task_id:
+            children: null
+            type: string
+        selected: false
+        title: 轮询进度
+        type: code
+        variables:
+        - value_selector:
+          - '1778565795503'
+          - agent_base_url
+          variable: agent_base_url
+        - value_selector:
+          - '1778565795503'
+          - host_payload
+          variable: host_payload
+        - value_selector:
+          - trigger_http
+          - body
+          variable: trigger_body
+      dragging: false
+      height: 52
+      id: poll_progress
+      position:
+        x: 896.1210901142531
+        y: 529.1473524282958
+      positionAbsolute:
+        x: 896.1210901142531
+        y: 529.1473524282958
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: run_case
+          conditions:
+          - comparison_operator: is
+            id: run_router_result
+            value: __RUN_INSPECTION__
+            varType: string
+            variable_selector:
+            - query_router
+            - text
+          id: run_case
+          logical_operator: or
+        - case_id: history_case
+          conditions:
+          - comparison_operator: is
+            id: history_router_result
+            value: __USE_HISTORY__
+            varType: string
+            variable_selector:
+            - query_router
+            - text
+          id: history_case
+          logical_operator: or
+        desc: 执行巡检 / 历史巡检答复 / 普通问答
+        selected: false
+        title: 判断回答路径
+        type: if-else
+      dragging: false
+      height: 248
+      id: query_route_if
+      position:
+        x: 324.05569871395073
+        y: 331.0052046840282
+      positionAbsolute:
+        x: 324.05569871395073
+        y: 331.0052046840282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        agent_parameters:
+          instruction:
+            type: constant
+            value: '你是入口意图判断助手。当前用户问题：
+
+              {{#sys.query#}}
+
+
+              最近巡检状态：{{#conversation.last_inspection_status#}}
+
+              最近任务ID：{{#conversation.last_task_id#}}
+
+              最近巡检主机：{{#conversation.last_host_payload#}}
+
+              最近巡检 Agent：{{#conversation.last_agent_base_url#}}
+
+              最近巡检上下文：{{#conversation.last_report_context#}}
+
+
+              输出规则：
+
+              1. 如果用户明确要求立即执行、开始、帮我巡检、做一次巡检、重新执行、再跑一次 Windows 主机/服务器巡检，只输出：__RUN_INSPECTION__
+
+              2. 如果用户的问题与当前服务器、巡检报告、巡检任务状态、风险解释、命令复现、报告含义、某一条检查项编号（如第57条）、英文检查项标题、事件日志、uptime
+              有关，无论当前有没有历史上下文，都只输出：__USE_HISTORY__
+
+              3. 只有当问题明显与当前服务器和巡检任务无关时，才直接正常回答用户问题。
+
+              4. 对巡检相关问题，不允许在这里直接展开作答；只能输出 __USE_HISTORY__。
+
+              5. 全部使用中文，简洁直接，不要调用工具。'
+          maximum_iterations:
+            type: constant
+            value: 1
+          model:
+            type: constant
+            value:
+              completion_params:
+                max_tokens: 1200
+                temperature: 0.1
+              mode: chat
+              model: minimax-m2.7
+              model_type: llm
+              provider: langgenius/minimax/minimax
+          query:
+            type: constant
+            value: 请按规则输出 __RUN_INSPECTION__、__USE_HISTORY__ 或直接给出普通问答结果。
+          tools:
+            type: constant
+            value:
+            - enabled: true
+              extra:
+                description: 一个用于获取当前时间的工具。
+              parameters: {}
+              provider_name: time
+              provider_show_name: time
+              schemas:
+              - default: '%Y-%m-%d %H:%M:%S'
+                form: form
+                label: Format
+                name: format
+                options: []
+                required: false
+                type: string
+              - default: UTC
+                form: form
+                label: Timezone
+                name: timezone
+                options:
+                - label: UTC
+                  value: UTC
+                required: false
+                type: select
+              settings:
+                format:
+                  value:
+                    type: constant
+                    value: '%Y-%m-%d %H:%M:%S'
+                timezone:
+                  value:
+                    type: constant
+                    value: UTC
+              tool_description: 一个用于获取当前时间的工具。
+              tool_label: 获取当前时间
+              tool_name: current_time
+              type: builtin
+        agent_strategy_label: ReAct
+        agent_strategy_name: ReAct
+        agent_strategy_provider_name: langgenius/agent/agent
+        desc: 执行巡检 / 历史巡检答复 / 普通问答
+        memory:
+          query_prompt_template: '你是入口意图判断助手。当前用户问题：
+
+            {{#sys.query#}}
+
+
+            最近巡检状态：{{#conversation.last_inspection_status#}}
+
+            最近任务ID：{{#conversation.last_task_id#}}
+
+            最近巡检主机：{{#conversation.last_host_payload#}}
+
+            最近巡检 Agent：{{#conversation.last_agent_base_url#}}
+
+            最近巡检上下文：{{#conversation.last_report_context#}}
+
+
+            输出规则：
+
+            1. 如果用户明确要求立即执行、开始、帮我巡检、做一次巡检、重新执行、再跑一次 Windows 主机/服务器巡检，只输出：__RUN_INSPECTION__
+
+            2. 如果用户的问题与当前服务器、巡检报告、巡检任务状态、风险解释、命令复现、报告含义、某一条检查项编号（如第57条）、英文检查项标题、事件日志、uptime
+            有关，无论当前有没有历史上下文，都只输出：__USE_HISTORY__
+
+            3. 只有当问题明显与当前服务器和巡检任务无关时，才直接正常回答用户问题。
+
+            4. 对巡检相关问题，不允许在这里直接展开作答；只能输出 __USE_HISTORY__。
+
+            5. 全部使用中文，简洁直接，不要调用工具。'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 20
+        output_schema:
+          properties:
+            files:
+              description: Generated files
+              items:
+                type: object
+              type: array
+            json:
+              description: Agent reasoning trace
+              items:
+                type: object
+              type: array
+            text:
+              description: Agent text output
+              type: string
+            usage:
+              description: Model usage
+              type: object
+        plugin_unique_identifier: langgenius/agent:0.0.37@a5dcc6ea00bca23439b49ff7d65704f3f5dd6ce2ca353205e62278e2148d84b6
+        selected: false
+        title: 入口意图判断
+        tool_node_version: '2'
+        type: agent
+      dragging: false
+      height: 216
+      id: query_router
+      position:
+        x: 29.730960222697178
+        y: 331.0052046840282
+      positionAbsolute:
+        x: 29.730960222697178
+        y: 331.0052046840282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: '{"host":"{{#1778565795503.host_payload#}}"}'
+          type: json
+        code: "import json\nfrom urllib import error, request\n\n\ndef _request_json(method:\
+          \ str, url: str, payload=None, timeout: int = 15):\n    data = None\n  \
+          \  headers = {'Content-Type': 'application/json'}\n    if payload is not\
+          \ None:\n        data = json.dumps(payload).encode('utf-8')\n    req = request.Request(url,\
+          \ data=data, headers=headers, method=method)\n    with request.urlopen(req,\
+          \ timeout=timeout) as resp:\n        body = resp.read().decode('utf-8')\n\
+          \        return resp.status, json.loads(body) if body else {}\n\n\ndef main(agent_base_url:\
+          \ str, host_payload: str):\n    base_url = (agent_base_url or '').strip().rstrip('/')\n\
+          \    host_payload = (host_payload or '').strip()\n    try:\n        status,\
+          \ payload = _request_json('POST', f'{base_url}/api/v1/trigger-inspection',\
+          \ {'host': host_payload}, timeout=12)\n        return {\n            'status_code':\
+          \ status,\n            'body': json.dumps(payload, ensure_ascii=False, separators=(',',\
+          \ ':')),\n            'task_id': str(payload.get('task_id') or ''),\n  \
+          \      }\n    except error.HTTPError as exc:\n        detail = exc.read().decode('utf-8',\
+          \ errors='ignore')\n        return {\n            'status_code': exc.code,\n\
+          \            'body': detail or '',\n            'task_id': '',\n       \
+          \ }\n    except Exception as exc:\n        raise Exception(f'Trigger request\
+          \ failed: {exc}')"
+        code_language: python3
+        desc: ''
+        error_strategy: fail-branch
+        headers: Content-Type:application/json
+        method: post
+        outputs:
+          body:
+            children: null
+            type: string
+          status_code:
+            children: null
+            type: number
+          task_id:
+            children: null
+            type: string
+        params: ''
+        retry_config:
+          max_retries: 2
+          retry_enabled: true
+          retry_interval: 1000
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 12000
+          max_read_timeout: 12000
+          max_write_timeout: 12000
+        title: 触发巡检
+        type: code
+        url: '{{#1778565795503.agent_base_url#}}/api/v1/trigger-inspection'
+        variables:
+        - value_selector:
+          - '1778565795503'
+          - agent_base_url
+          variable: agent_base_url
+        - value_selector:
+          - '1778565795503'
+          - host_payload
+          variable: host_payload
+      dragging: false
+      height: 117
+      id: trigger_http
+      position:
+        x: 1135.1572840085494
+        y: -114.86814217683805
+      positionAbsolute:
+        x: 1135.1572840085494
+        y: -114.86814217683805
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: run_case
+          conditions:
+          - comparison_operator: contains
+            id: trigger_accepted
+            value: '"status":"accepted"'
+            varType: string
+            variable_selector:
+            - trigger_http
+            - body
+          - comparison_operator: contains
+            id: trigger_running
+            value: '"status":"already_running"'
+            varType: string
+            variable_selector:
+            - trigger_http
+            - body
+          logical_operator: or
+        - case_id: auth_case
+          conditions:
+          - comparison_operator: contains
+            id: trigger_password
+            value: password
+            varType: string
+            variable_selector:
+            - trigger_http
+            - body
+          - comparison_operator: contains
+            id: trigger_credential
+            value: credential
+            varType: string
+            variable_selector:
+            - trigger_http
+            - body
+          - comparison_operator: contains
+            id: trigger_unauthorized
+            value: unauthorized
+            varType: string
+            variable_selector:
+            - trigger_http
+            - body
+          - comparison_operator: contains
+            id: trigger_401
+            value: '401'
+            varType: string
+            variable_selector:
+            - trigger_http
+            - body
+          logical_operator: or
+        desc: 受理成功 / 认证失败 / 其他触发失败
+        selected: false
+        title: 判断触发结果
+        type: if-else
+      dragging: false
+      height: 424
+      id: trigger_ok_if
+      position:
+        x: 1648.2951667584
+        y: -276.88601656987294
+      positionAbsolute:
+        x: 1648.2951667584
+        y: -276.88601656987294
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        desc: ''
+        params:
+          filename: Windows巡检全量报告.docx
+          markdown: '{{#word_markdown_preprocess.markdown#}}'
+          style_profile: 技术文档
+        plugin_unique_identifier: chuhaojiqi/flexmd-to-word:0.0.1@1d67c3478c47019913144c63b20e236f0926d49545a3cc39affd5600cf231c5e
+        provider_id: chuhaojiqi/flexmd-to-word/document-converter-word-01
+        provider_name: chuhaojiqi/flexmd-to-word/document-converter-word-01
+        provider_type: builtin
+        selected: false
+        title: 生成 Word 报告
+        tool_configurations:
+          body_font:
+            type: constant
+            value: 微软雅黑
+          body_size_pt:
+            type: constant
+            value: '11'
+          filename:
+            type: constant
+            value: Windows巡检全量报告.docx
+          h1_font:
+            type: constant
+            value: 微软雅黑
+          h1_size_pt:
+            type: constant
+            value: '20'
+          h2_font:
+            type: constant
+            value: 微软雅黑
+          h2_size_pt:
+            type: constant
+            value: '16'
+          h3_font:
+            type: constant
+            value: 微软雅黑
+          h3_size_pt:
+            type: constant
+            value: '14'
+          h4_font:
+            type: constant
+            value: 微软雅黑
+          h4_size_pt:
+            type: constant
+            value: '13'
+          h5_font:
+            type: constant
+            value: 微软雅黑
+          h5_size_pt:
+            type: constant
+            value: '12'
+          style_profile:
+            type: constant
+            value: 技术文档
+        tool_description: 将 Markdown 文本转换为 Word (.docx) 文件
+        tool_label: FlexMD-to-Word
+        tool_name: document-converter-word-01
+        tool_node_version: '2'
+        tool_parameters:
+          body_font:
+            type: mixed
+            value: 微软雅黑
+          body_size_pt:
+            type: mixed
+            value: '11'
+          filename:
+            type: mixed
+            value: Windows巡检全量报告.docx
+          h1_font:
+            type: mixed
+            value: 微软雅黑
+          h1_size_pt:
+            type: mixed
+            value: '20'
+          h2_font:
+            type: mixed
+            value: 微软雅黑
+          h2_size_pt:
+            type: mixed
+            value: '16'
+          h3_font:
+            type: mixed
+            value: 微软雅黑
+          h3_size_pt:
+            type: mixed
+            value: '14'
+          h4_font:
+            type: mixed
+            value: 微软雅黑
+          h4_size_pt:
+            type: mixed
+            value: '13'
+          h5_font:
+            type: mixed
+            value: 微软雅黑
+          h5_size_pt:
+            type: mixed
+            value: '12'
+          markdown:
+            type: mixed
+            value: '{{#word_markdown_preprocess.markdown#}}'
+          style_profile:
+            type: mixed
+            value: 技术文档
+        type: tool
+      height: 426
+      id: word_export_docx
+      position:
+        x: 2474.0883419574748
+        y: 554.280918281552
+      positionAbsolute:
+        x: 2474.0883419574748
+        y: 554.280918281552
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "import html\nimport re\n\n\ndef _is_table_row(line: str) -> bool:\n\
+          \    stripped = (line or '').strip()\n    return stripped.startswith('|')\
+          \ and stripped.endswith('|') and stripped.count('|') >= 2\n\n\ndef _is_separator_row(line:\
+          \ str) -> bool:\n    stripped = (line or '').strip().strip('|').strip()\n\
+          \    if not stripped:\n        return False\n    cells = [cell.strip() for\
+          \ cell in stripped.split('|')]\n    return bool(cells) and all(re.fullmatch(r':?-{3,}:?',\
+          \ cell or '') for cell in cells)\n\n\ndef _parse_cells(line: str) -> list[str]:\n\
+          \    stripped = (line or '').strip()\n    if stripped.startswith('|'):\n\
+          \        stripped = stripped[1:]\n    if stripped.endswith('|'):\n     \
+          \   stripped = stripped[:-1]\n\n    cells = []\n    current = []\n    escaped\
+          \ = False\n    for char in stripped:\n        if escaped:\n            current.append(char)\n\
+          \            escaped = False\n            continue\n        if char == '\\\
+          \\':\n            escaped = True\n            continue\n        if char\
+          \ == '|':\n            cells.append(''.join(current).strip())\n        \
+          \    current = []\n            continue\n        current.append(char)\n\
+          \    cells.append(''.join(current).strip())\n    return cells\n\n\ndef _cell_html(value:\
+          \ str) -> str:\n    escaped = html.escape((value or '').replace('\\\\|',\
+          \ '|'), quote=False)\n    return escaped.replace('&lt;br&gt;', '<br/>')\n\
+          \n\ndef _build_html_table(header: list[str], rows: list[list[str]]) -> str:\n\
+          \    parts = ['<table>', '<thead>', '<tr>']\n    for cell in header:\n \
+          \       parts.append(f'<th>{_cell_html(cell)}</th>')\n    parts.extend(['</tr>',\
+          \ '</thead>', '<tbody>'])\n    for row in rows:\n        parts.append('<tr>')\n\
+          \        for cell in row:\n            parts.append(f'<td>{_cell_html(cell)}</td>')\n\
+          \        parts.append('</tr>')\n    parts.extend(['</tbody>', '</table>'])\n\
+          \    return ''.join(parts)\n\n\ndef _convert_pipe_tables(markdown_text:\
+          \ str) -> str:\n    lines = (markdown_text or '').splitlines()\n    output\
+          \ = []\n    index = 0\n    in_fence = False\n\n    while index < len(lines):\n\
+          \        line = lines[index]\n        if line.strip().startswith('```'):\n\
+          \            in_fence = not in_fence\n            output.append(line)\n\
+          \            index += 1\n            continue\n\n        if not in_fence\
+          \ and index + 1 < len(lines) and _is_table_row(line) and _is_separator_row(lines[index\
+          \ + 1]):\n            header = _parse_cells(line)\n            rows = []\n\
+          \            cursor = index + 2\n            while cursor < len(lines) and\
+          \ _is_table_row(lines[cursor]):\n                rows.append(_parse_cells(lines[cursor]))\n\
+          \                cursor += 1\n            output.append(_build_html_table(header,\
+          \ rows))\n            index = cursor\n            continue\n\n        output.append(line)\n\
+          \        index += 1\n\n    return '\\n'.join(output)\n\n\ndef main(report_markdown:\
+          \ str = '', summary_markdown: str = ''):\n    report_markdown = (report_markdown\
+          \ or '').strip()\n    summary_markdown = (summary_markdown or '').strip()\n\
+          \    if report_markdown and summary_markdown:\n        combined = report_markdown\
+          \ + '\\n\\n---\\n\\n' + summary_markdown\n    else:\n        combined =\
+          \ report_markdown or summary_markdown\n    return {\n        'markdown':\
+          \ _convert_pipe_tables(combined),\n    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          markdown:
+            children: null
+            type: string
+        selected: false
+        title: Word 表格预处理
+        type: code
+        variables:
+        - value_selector:
+          - fetch_report
+          - report_markdown
+          variable: report_markdown
+        - value_selector:
+          - llm
+          - text
+          variable: summary_markdown
+      dragging: false
+      height: 52
+      id: word_markdown_preprocess
+      position:
+        x: 3017.431980382113
+        y: 260
+      positionAbsolute:
+        x: 3017.431980382113
+        y: 260
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "def _ensure_list(value):\n    if value is None:\n        return []\n\
+          \    if isinstance(value, list):\n        return value\n    return [value]\n\
+          \n\ndef _escape_attr(value):\n    return (value or '').replace('&', '&amp;').replace('\"\
+          ', '&quot;').replace('<', '&lt;').replace('>', '&gt;')\n\n\ndef main(files=None):\n\
+          \    file_list = _ensure_list(files)\n    first = next((item for item in\
+          \ file_list if isinstance(item, dict)), None)\n    file_name = 'Windows巡检全量报告.docx'\n\
+          \    download_url = ''\n\n    if first:\n        file_name = str(first.get('name')\
+          \ or first.get('filename') or file_name)\n        download_url = str(first.get('url')\
+          \ or '').strip()\n\n    if download_url:\n        safe_url = _escape_attr(download_url)\n\
+          \        safe_name = _escape_attr(file_name)\n        download_markdown\
+          \ = f'<a href=\"{safe_url}\">{safe_name}</a>'\n        link_status = 'ready'\n\
+          \    else:\n        download_markdown = 'Word 报告暂未生成可下载链接，请稍后重试。'\n    \
+          \    link_status = 'missing'\n\n    return {\n        'file_name': file_name,\n\
+          \        'download_url': download_url,\n        'download_markdown': download_markdown,\n\
+          \        'link_status': link_status,\n    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          download_markdown:
+            children: null
+            type: string
+          download_url:
+            children: null
+            type: string
+          file_name:
+            children: null
+            type: string
+          link_status:
+            children: null
+            type: string
+        selected: false
+        title: Word 下载链接
+        type: code
+        variables:
+        - value_selector:
+          - word_export_docx
+          - files
+          variable: files
+      dragging: false
+      height: 52
+      id: word_download_link
+      position:
+        x: 2866.786221766537
+        y: 549.8383389498373
+      positionAbsolute:
+        x: 2866.786221766537
+        y: 549.8383389498373
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "import re\n\n\ndef _normalize(text):\n    text = (text or '').strip().lower()\n\
+          \    text = re.sub(r'\\s+', '', text)\n    return text\n\n\ndef main(query=''):\n\
+          \    normalized = _normalize(query)\n    negative_patterns = ['不要巡检', '别巡检',\
+          \ '不用巡检', '先别巡检']\n    explicit_patterns = [\n        '帮我巡检', '开始巡检', '执行巡检',\
+          \ '立即巡检', '现在巡检',\n        '做一次巡检', '重新执行巡检', '重新巡检', '再跑一次巡检',\n      \
+          \  '再巡检一次', '重新跑一次巡检', '再做一次巡检', '跑一次巡检',\n    ]\n\n    matched_reason =\
+          \ ''\n    route = ''\n    if any(pattern in normalized for pattern in negative_patterns):\n\
+          \        matched_reason = 'negative'\n    elif normalized in ('巡检', '开始',\
+          \ '开始巡检', '执行', '执行巡检'):\n        route = '__RUN_INSPECTION__'\n       \
+          \ matched_reason = 'exact'\n    elif any(pattern in normalized for pattern\
+          \ in explicit_patterns):\n        route = '__RUN_INSPECTION__'\n       \
+          \ matched_reason = 'pattern'\n    elif '巡检' in normalized and any(keyword\
+          \ in normalized for keyword in ('再', '重新', '开始', '执行', '立即', '现在', '帮我',\
+          \ '跑一次', '做一次')):\n        route = '__RUN_INSPECTION__'\n        matched_reason\
+          \ = 'keyword_combo'\n\n    return {\n        'route': route,\n        'matched_reason':\
+          \ matched_reason,\n        'normalized_query': normalized,\n    }\n"
+        code_language: python3
+        desc: 显式巡检命令优先判定
+        outputs:
+          matched_reason:
+            children: null
+            type: string
+          normalized_query:
+            children: null
+            type: string
+          route:
+            children: null
+            type: string
+        selected: false
+        title: 显式巡检判定
+        type: code
+        variables:
+        - value_selector:
+          - sys
+          - query
+          variable: query
+      dragging: false
+      height: 80
+      id: explicit_run_guard
+      position:
+        x: 29.730960222697178
+        y: -31.248818275943705
+      positionAbsolute:
+        x: 29.730960222697178
+        y: -31.248818275943705
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        cases:
+        - case_id: run_case
+          conditions:
+          - comparison_operator: is
+            id: explicit_run_route
+            value: __RUN_INSPECTION__
+            varType: string
+            variable_selector:
+            - explicit_run_guard
+            - route
+          id: run_case
+          logical_operator: or
+        desc: 显式巡检命令 / 其余问题
+        selected: false
+        title: 显式巡检分流
+        type: if-else
+      dragging: false
+      height: 176
+      id: explicit_run_if
+      position:
+        x: 29.730960222697178
+        y: 108.11672155888027
+      positionAbsolute:
+        x: 29.730960222697178
+        y: 108.11672155888027
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    viewport:
+      x: -745.833041736636
+      y: 158.33678454261036
+      zoom: 0.5057142837089262
+  rag_pipeline_variables: []
