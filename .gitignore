@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+doc/
+document/
+dist/
+build/dify-win-agent/
+*.spec

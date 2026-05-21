@@ -1,0 +1,142 @@
+{
+  "version": "2026-05-18",
+  "source": "Microsoft AD.docx",
+  "notes": "将本 JSON 作为 Dify 页面中的环境变量 COMMAND_LIBRARY_JSON 的值。它不是 Windows agent 本地配置。后续新增命令时，优先在 commands 数组中追加。长篇说明和背景知识放知识库。",
+  "commands": [
+    {
+      "id": "host_domain_role_probe",
+      "category": "active_directory",
+      "title": "主机域角色探测",
+      "risk_level": "low",
+      "shell": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$cs = Get-CimInstance Win32_ComputerSystem; [pscustomobject]@{ ComputerName = $cs.Name; Domain = $cs.Domain; PartOfDomain = $cs.PartOfDomain; DomainRole = $cs.DomainRole; DomainRoleText = switch ($cs.DomainRole) { 0 {'StandaloneWorkstation'} 1 {'MemberWorkstation'} 2 {'StandaloneServer'} 3 {'MemberServer'} 4 {'BackupDomainController'} 5 {'PrimaryDomainController'} default {'Unknown'} } } | Format-List\"",
+      "purpose": "判断当前机器是否已加入域、是否为域控制器",
+      "output_hint": "ComputerName, Domain, PartOfDomain, DomainRole, DomainRoleText"
+    },
+    {
+      "id": "ad_tooling_probe",
+      "category": "active_directory",
+      "title": "AD 工具可用性探测",
+      "risk_level": "low",
+      "shell": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$ad = Get-Module -ListAvailable ActiveDirectory | Select-Object -First 1 Name, Version, Path; $rep = Get-Command repadmin -ErrorAction SilentlyContinue; $dcd = Get-Command dcdiag -ErrorAction SilentlyContinue; [pscustomobject]@{ ActiveDirectoryModuleInstalled = [bool]$ad; ActiveDirectoryModulePath = if ($ad) { $ad.Path } else { $null }; RepadminAvailable = [bool]$rep; DcdiagAvailable = [bool]$dcd } | Format-List\"",
+      "purpose": "检查 Active Directory PowerShell 模块、repadmin、dcdiag 是否可用",
+      "output_hint": "ActiveDirectoryModuleInstalled, ActiveDirectoryModulePath, RepadminAvailable, DcdiagAvailable"
+    },
+    {
+      "id": "ad_ntds_service_probe",
+      "category": "active_directory",
+      "title": "NTDS 服务探测",
+      "risk_level": "low",
+      "shell": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$svc = Get-Service -Name NTDS -ErrorAction SilentlyContinue; if ($svc) { $svc | Select-Object Name, Status, StartType, DisplayName } else { Write-Error '未发现 NTDS 服务。当前主机大概率不是域控制器。'; exit 3 }\"",
+      "purpose": "判断当前主机是否具备域控核心服务",
+      "output_hint": "Name, Status, StartType, DisplayName"
+    },
+    {
+      "id": "ad_domain_controllers",
+      "category": "active_directory",
+      "title": "域控制器基本信息",
+      "risk_level": "low",
+      "shell": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Get-Module -ListAvailable ActiveDirectory) { Import-Module ActiveDirectory; Get-ADDomainController -Filter * | Select-Object Name, IPv4Address, OperatingSystem, Site, IsGlobalCatalog, IsReadOnly } else { Write-Error 'ActiveDirectory PowerShell 模块不可用。请先安装 RSAT-AD-PowerShell 或在域控制器上执行该命令。'; exit 2 }\"",
+      "purpose": "列出所有域控制器及其状态",
+      "output_hint": "Name, IPv4Address, OperatingSystem, Site, IsGlobalCatalog, IsReadOnly"
+    },
+    {
+      "id": "ad_domain_info",
+      "category": "active_directory",
+      "title": "AD 域信息",
+      "risk_level": "low",
+      "shell": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Get-Module -ListAvailable ActiveDirectory) { Import-Module ActiveDirectory; Get-ADDomain | Select-Object DNSRoot, DomainMode, PDCEmulator, RIDMaster, InfrastructureMaster } else { Write-Error 'ActiveDirectory PowerShell 模块不可用。请先安装 RSAT-AD-PowerShell 或在域控制器上执行该命令。'; exit 2 }\"",
+      "purpose": "获取域模式和核心角色信息",
+      "output_hint": "DNSRoot, DomainMode, PDCEmulator, RIDMaster, InfrastructureMaster"
+    },
+    {
+      "id": "ad_forest_info",
+      "category": "active_directory",
+      "title": "AD 林信息",
+      "risk_level": "low",
+      "shell": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Get-Module -ListAvailable ActiveDirectory) { Import-Module ActiveDirectory; Get-ADForest | Select-Object ForestMode, RootDomain, SchemaMaster, DomainNamingMaster, GlobalCatalogs } else { Write-Error 'ActiveDirectory PowerShell 模块不可用。请先安装 RSAT-AD-PowerShell 或在域控制器上执行该命令。'; exit 2 }\"",
+      "purpose": "获取林模式和全局编录信息",
+      "output_hint": "ForestMode, RootDomain, SchemaMaster, DomainNamingMaster, GlobalCatalogs"
+    },
+    {
+      "id": "ad_repadmin_summary",
+      "category": "active_directory",
+      "title": "AD 复制摘要",
+      "risk_level": "low",
+      "shell": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$rep = Get-Command repadmin -ErrorAction SilentlyContinue; if ($rep) { & repadmin /replsummary } else { Write-Error 'repadmin 不可用。请在域控制器或已安装 AD DS/RSAT 工具的服务器上执行该命令。'; exit 2 }\"",
+      "purpose": "检查 AD 复制摘要",
+      "output_hint": "复制延迟、失败数量、目标 DC"
+    },
+    {
+      "id": "ad_dcdiag_full",
+      "category": "active_directory",
+      "title": "DCDiag 全量检查",
+      "risk_level": "low",
+      "shell": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$dcd = Get-Command dcdiag -ErrorAction SilentlyContinue; if ($dcd) { & dcdiag /v /c /e } else { Write-Error 'dcdiag 不可用。请在域控制器或已安装 AD DS/RSAT 工具的服务器上执行该命令。'; exit 2 }\"",
+      "purpose": "对所有域控运行完整诊断",
+      "output_hint": "各项测试结果与错误信息"
+    },
+    {
+      "id": "ad_disabled_users",
+      "category": "active_directory",
+      "title": "禁用用户账户",
+      "risk_level": "low",
+      "shell": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Get-Module -ListAvailable ActiveDirectory) { Import-Module ActiveDirectory; Get-ADUser -Filter {Enabled -eq $false} -Properties LastLogonDate, WhenCreated | Select-Object Name, SamAccountName, LastLogonDate, WhenCreated, DistinguishedName } else { Write-Error 'ActiveDirectory PowerShell 模块不可用。请先安装 RSAT-AD-PowerShell 或在域控制器上执行该命令。'; exit 2 }\"",
+      "purpose": "统计禁用的用户账户",
+      "output_hint": "Name, SamAccountName, LastLogonDate, WhenCreated, DistinguishedName"
+    },
+    {
+      "id": "ad_locked_out_users",
+      "category": "active_directory",
+      "title": "锁定用户检查",
+      "risk_level": "low",
+      "shell": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Get-Module -ListAvailable ActiveDirectory) { Import-Module ActiveDirectory; Search-ADAccount -LockedOut | Select-Object Name, SamAccountName, LastLogonDate } else { Write-Error 'ActiveDirectory PowerShell 模块不可用。请先安装 RSAT-AD-PowerShell 或在域控制器上执行该命令。'; exit 2 }\"",
+      "purpose": "检查当前被锁定的 AD 用户",
+      "output_hint": "Name, SamAccountName, LastLogonDate"
+    },
+    {
+      "id": "ad_dns_zones",
+      "category": "active_directory",
+      "title": "DNS 区域列表",
+      "risk_level": "low",
+      "shell": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if (Get-Command Get-DnsServerZone -ErrorAction SilentlyContinue) { Get-DnsServerZone | Select-Object ZoneName, ZoneType, DynamicUpdate, IsReverseLookupZone, IsDsIntegrated } else { Write-Error 'DnsServer 模块或 DNS 服务器工具不可用。'; exit 2 }\"",
+      "purpose": "检查 DNS 区域配置",
+      "output_hint": "ZoneName, ZoneType, DynamicUpdate, IsReverseLookupZone, IsDsIntegrated"
+    },
+    {
+      "id": "exchange_server_list",
+      "category": "exchange",
+      "title": "Exchange 服务器清单",
+      "risk_level": "low",
+      "shell": "Get-ExchangeServer | Select-Object Name, ServerRole, Edition, AdminDisplayVersion, Site",
+      "purpose": "列出 Exchange 服务器基础信息",
+      "output_hint": "Name, ServerRole, Edition, AdminDisplayVersion, Site"
+    },
+    {
+      "id": "exchange_health_report",
+      "category": "exchange",
+      "title": "Exchange 健康报告",
+      "risk_level": "low",
+      "shell": "Get-HealthReport -Server (Get-ExchangeServer).Name",
+      "purpose": "获取 Exchange 健康报告",
+      "output_hint": "健康状态、失败项、组件名称"
+    },
+    {
+      "id": "exchange_component_state",
+      "category": "exchange",
+      "title": "Exchange 组件状态",
+      "risk_level": "low",
+      "shell": "Get-ExchangeServer | ForEach-Object { Get-ServerComponentState -Identity $_.Name | Select-Object @{N='Server';E={$_.Identity}}, Component, State }",
+      "purpose": "检查 Exchange 服务器组件状态",
+      "output_hint": "Server, Component, State"
+    },
+    {
+      "id": "exchange_database_status",
+      "category": "exchange",
+      "title": "邮箱数据库状态",
+      "risk_level": "low",
+      "shell": "Get-MailboxDatabase -Status | Select-Object Name, Server, EdbFilePath, DatabaseSize, AvailableNewMailboxSpace, MasterServerOrAvailabilityGroup, Mounted, LastFullBackup, LastIncrementalBackup",
+      "purpose": "检查邮箱数据库挂载和备份状态",
+      "output_hint": "Name, Server, DatabaseSize, Mounted, LastFullBackup, LastIncrementalBackup"
+    }
+  ]
+}
