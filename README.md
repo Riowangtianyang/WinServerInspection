@@ -176,6 +176,27 @@ python -m pytest -q
 - 程序根目录下生成的 doc、document、dify-win-agent.settings.json 都属于本地运行产物
 - build/dify-win-agent、.pytest_cache、*.spec 也都属于本地构建/测试产物
 
+## GitHub 自动发布 exe
+
+如果你希望以后直接在 GitHub 页面下载 exe，不建议用 Packages，而应该用 Releases：
+
+- GitHub Packages 更适合 npm、NuGet、Docker 这类包仓库
+- Windows 单文件 exe 最适合挂在 GitHub Release assets 里
+
+仓库已经提供自动发布工作流 [release.yml](.github/workflows/release.yml)，会在 Windows runner 上执行打包，并把 exe 自动上传到对应版本页。
+
+触发方式有两种：
+
+1. 在 GitHub 的 Releases 页面点击“创建新版本”，填写类似 v0.1.0 的 tag 并发布
+2. 在 GitHub Actions 页面手动运行 Build Windows Release，并填写 release_tag
+
+工作流完成后，Release 页面会自动出现两个下载资产：
+
+- dify-win-agent-<tag>-windows-x64.exe
+- dify-win-agent-<tag>-windows-x64.zip
+
+下载后直接双击 exe 即可运行。首次运行仍会受到 Windows SmartScreen 和 UAC 的正常提示。
+
 ## Dify 对接文档
 
 - Chatflow 搭建与节点建议见 [docs/dify-chatflow-setup.md](docs/dify-chatflow-setup.md)

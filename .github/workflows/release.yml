@@ -1,0 +1,103 @@
+name: Build Windows Release
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Git tag or release tag, for example v0.1.0
+        required: true
+      release_name:
+        description: Optional release title override
+        required: false
+
+jobs:
+  build-and-upload:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONUTF8: "1"
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Build exe
+        shell: pwsh
+        run: ./scripts/build.ps1
+
+      - name: Prepare release assets
+        id: prepare_assets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $tag = if ("${{ github.event_name }}" -eq "release") {
+            "${{ github.event.release.tag_name }}"
+          } else {
+            "${{ github.event.inputs.release_tag }}"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+            throw "Release tag is required."
+          }
+
+          $releaseName = if ("${{ github.event_name }}" -eq "release") {
+            if ([string]::IsNullOrWhiteSpace("${{ github.event.release.name }}")) {
+              $tag
+            } else {
+              "${{ github.event.release.name }}"
+            }
+          } elseif ([string]::IsNullOrWhiteSpace("${{ github.event.inputs.release_name }}")) {
+            $tag
+          } else {
+            "${{ github.event.inputs.release_name }}"
+          }
+
+          $sourceExe = Join-Path (Get-Location) "dist/dify-win-agent.exe"
+          if (-not (Test-Path $sourceExe)) {
+            throw "Build output not found: $sourceExe"
+          }
+
+          $assetDirectory = Join-Path (Get-Location) "release-assets"
+          if (Test-Path $assetDirectory) {
+            Remove-Item $assetDirectory -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $assetDirectory | Out-Null
+
+          $assetBaseName = "dify-win-agent-$tag-windows-x64"
+          $exeAsset = Join-Path $assetDirectory "$assetBaseName.exe"
+          $zipAsset = Join-Path $assetDirectory "$assetBaseName.zip"
+
+          Copy-Item $sourceExe $exeAsset -Force
+          Compress-Archive -Path $exeAsset -DestinationPath $zipAsset -Force
+
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "release_name=$releaseName" >> $env:GITHUB_OUTPUT
+          "exe_asset=$exeAsset" >> $env:GITHUB_OUTPUT
+          "zip_asset=$zipAsset" >> $env:GITHUB_OUTPUT
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.prepare_assets.outputs.tag }}
+          name: ${{ steps.prepare_assets.outputs.release_name }}
+          overwrite_files: true
+          files: |
+            ${{ steps.prepare_assets.outputs.exe_asset }}
+            ${{ steps.prepare_assets.outputs.zip_asset }}
