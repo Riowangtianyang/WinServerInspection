@@ -331,8 +331,17 @@ workflow:
     - data:
         sourceType: agent
         targetType: code
-      id: 1779172289855-source-execute_docx_policy-target
+      id: 1779172289855-source-execute_text_fallback_v11-target
       source: '1779172289855'
+      sourceHandle: source
+      target: execute_text_fallback_v11
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: code
+        targetType: code
+      id: execute_text_fallback_v11-source-execute_docx_policy-target
+      source: execute_text_fallback_v11
       sourceHandle: source
       target: execute_docx_policy
       targetHandle: target
@@ -2337,7 +2346,63 @@ workflow:
       type: custom
       width: 242
     - data:
-        answer: '{{#1779172289855.text#}}
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: '{}'
+          type: json
+        code: "def main(text: str, summary: str):\n    primary = (text or '').strip()\n    if primary:\n        return {'final_text': primary, 'text_source': 'agent'}\n    fallback = (summary or '').strip()\n    if fallback:\n        return {'final_text': fallback, 'text_source': 'summary'}\n    return {'final_text': '', 'text_source': 'empty'}"
+        code_language: python3
+        desc: ''
+        error_strategy: fail-branch
+        headers: Content-Type:application/json
+        method: post
+        outputs:
+          final_text:
+            children: null
+            type: string
+          text_source:
+            children: null
+            type: string
+        params: ''
+        retry_config:
+          max_retries: 0
+          retry_enabled: false
+          retry_interval: 1000
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 20000
+          max_read_timeout: 20000
+          max_write_timeout: 20000
+        title: 执行正文回退
+        type: code
+        url: http://localhost/execute-text-fallback-v1.1
+        variables:
+        - value_selector:
+          - '1779172289855'
+          - text
+          variable: text
+        - value_selector:
+          - result_agent
+          - summary
+          variable: summary
+      height: 88
+      id: execute_text_fallback_v11
+      position:
+        x: 3943.3376474407855
+        y: 547.869003477846
+      positionAbsolute:
+        x: 3943.3376474407855
+        y: 547.869003477846
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        answer: '{{#execute_text_fallback_v11.final_text#}}
 
 
           {{#1779172289855.files#}}'
@@ -2529,7 +2594,7 @@ workflow:
       type: custom
       width: 242
     - data:
-        answer: '{{#1779172289855.text#}}
+        answer: '{{#execute_text_fallback_v11.final_text#}}
 
 
           {{#1779172289855.files#}}
@@ -3486,8 +3551,8 @@ workflow:
         url: http://localhost/execute-docx-policy
         variables:
         - value_selector:
-          - '1779172289855'
-          - text
+           - execute_text_fallback_v11
+           - final_text
           variable: final_text
         - value_selector:
           - sys
@@ -5784,7 +5849,7 @@ workflow:
           \ },\n    {\n        'name': 'DNS区域检查',\n        'keywords': ('dns区域', 'dns配置',\
           \ 'dnszone', '区域列表'),\n        'command_ids': ('host_domain_role_probe',\
           \ 'ad_dns_zones'),\n    },\n    {\n        'name': 'Exchange基础巡检',\n   \
-          \     'keywords': ('exchange', '邮箱数据库', 'dag', '邮件队列', '证书状态', 'exchange健康'),\n\
+          \     'keywords': ('exchange', 'exchange服务器', 'exchange 服务器', 'exchange证书', 'exchange 证书', '邮箱数据库', 'dag', '邮件队列', 'exchange健康', 'exchange 健康'),\n\
           \        'command_ids': ('exchange_server_list', 'exchange_health_report',\
           \ 'exchange_component_state', 'exchange_database_status', 'exchange_dag_status',\
           \ 'exchange_mail_queues', 'exchange_certificates'),\n    },\n]\n\ndef _normalize(text:\
